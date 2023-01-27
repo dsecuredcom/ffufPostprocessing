@@ -13,6 +13,8 @@ func GetArguments() _struct.Configuration {
 	FfufBodiesFolder := flag.String("bodies-folder", "", "Path to the ffuf bodies folder")
 	DeleteUnnecessaryBodyFiles := flag.Bool("delete-bodies", false, "Delete unnecessary body files")
 
+	flag.Parse()
+
 	return _struct.Configuration{
 		OriginalFfufResultFile:     *OriginalFfufResultFile,
 		NewFfufResultFile:          *NewFfufResultFile,
