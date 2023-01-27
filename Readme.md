@@ -15,11 +15,7 @@ Adding "-od" is not mandatory but recommended.
 ## Usage
 
 ```
-./ffufPostprocessing 
-    -result-file /tmp/ffuf/results.json 
-    -new-result-fule /tmp/ffuf/results-new.json 
-    -bodies-folder /tmp/ffuf/bodies/
-    -delete-bodies
+./ffufPostprocessing -result-file /tmp/ffuf/results.json -new-result-fule /tmp/ffuf/results-new.json -bodies-folder /tmp/ffuf/bodies/ -delete-bodies
 ```
 
 ## Details
