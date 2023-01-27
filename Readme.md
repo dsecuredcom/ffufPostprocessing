@@ -1,4 +1,4 @@
-#Ffuf: Post processing
+# Ffuf: Post processing
 Unfortunately - despite its "-ac" flag, ffuf tends to produce a lot of irrelevant entries. 
 This is why I've created a post-processing tool to filter out those entries. This tool has to be
 run after ffuf has finished. Additionally, the initial ffuf command should be run with the following flags:
@@ -12,7 +12,7 @@ run after ffuf has finished. Additionally, the initial ffuf command should be ru
 This forces ffuf to write a summary file in json format as well as bodies of the responses to disk. 
 Adding "-od" is not mandatory but recommended.
 
-##Usage
+## Usage
 
 ```
 ./ffufPostprocessing 
@@ -22,7 +22,7 @@ Adding "-od" is not mandatory but recommended.
     -delete-bodies
 ```
 
-##Details
+## Details
 
 Especially when -od is set, which means we have all http headers and bodies for each requested url - this tool will initially
 analyse all bodies and enrich the initial results json file with the following data points:
@@ -42,7 +42,7 @@ In general this tool will always keep a small amount of entries which are _not_ 
 contains 300x http status 403 (with size, length, ... identical) and 2 unique http status 200 responses, it won't drop all 300 http status 403 entries. 
 It will keep 2 of them in the data set.
 
-##Install
+## Install
 
 ffufPostprocessing requires golang 1.19
 
@@ -62,4 +62,5 @@ go build -o dist/ffufPostprocessing main.go
 docker build -t ffufPostprocessing .
 ```
 
-##License
+## License
+
