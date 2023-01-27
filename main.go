@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Damian89/ffufPostprocessing/pkg/general"
+	"github.com/Damian89/ffufPostprocessing/pkg/results"
 	_struct "github.com/Damian89/ffufPostprocessing/pkg/struct"
 	"io"
 )
@@ -11,20 +12,34 @@ import (
 func main() {
 
 	Configuration := general.GetArguments()
-	fmt.Printf("Original result file: %s\n", Configuration.OriginalFfufResultFile)
-	fmt.Printf("New result file: %s\n", Configuration.NewFfufResultFile)
-	fmt.Printf("Bodies folder: %s\n", Configuration.FfufBodiesFolder)
-	fmt.Printf("Delete unnecessary body files: %t\n", Configuration.DeleteUnnecessaryBodyFiles)
+	fmt.Printf("\033[34m[i]\033[0m Original result file: %s\n", Configuration.OriginalFfufResultFile)
 
 	if !general.FileExists(Configuration.OriginalFfufResultFile) {
-		fmt.Printf("Original result file does not exist: %s\n", Configuration.OriginalFfufResultFile)
+		fmt.Printf("\033[31m[x]\033[0m Original result file does not exist: %s\n", Configuration.OriginalFfufResultFile)
 		return
 	}
+
+	fmt.Printf("\033[34m[i]\033[0m New result file: %s\n", Configuration.NewFfufResultFile)
+
+	if Configuration.FfufBodiesFolder != "" {
+		fmt.Printf("\033[34m[i]\033[0m Bodies folder: %s\n", Configuration.FfufBodiesFolder)
+	}
+
+	if Configuration.FfufBodiesFolder != "" && !general.FileExists(Configuration.FfufBodiesFolder) {
+		fmt.Printf("\033[31[x]\033[0m Folder with bodies does not exist! Stopping here!\n")
+		return
+	}
+
+	if Configuration.DeleteUnnecessaryBodyFiles {
+		fmt.Printf("\033[34m[!]\033[0m Unnecessary bodies \033[31mwill be deleted\033[0m after analysis\n")
+	}
+
+	fmt.Printf("\033[34m[i]\033[0m Loading results file\n")
 
 	jsonFile := general.LoadJsonFile(Configuration.OriginalFfufResultFile)
 
 	if jsonFile == nil {
-		fmt.Printf("Could not load original result file: %s\n", Configuration.OriginalFfufResultFile)
+		fmt.Printf("\u001B[31m[x]\u001B[0m Could not load original result file: %s\n", Configuration.OriginalFfufResultFile)
 		return
 	}
 
@@ -32,18 +47,21 @@ func main() {
 
 	jsonByteValue, _ := io.ReadAll(jsonFile)
 
-	var results _struct.Results
+	var ResultsData _struct.Results
 
-	json.Unmarshal(jsonByteValue, &results)
+	json.Unmarshal(jsonByteValue, &ResultsData)
 
-	for i := 0; i < len(results.Results); i++ {
-		fmt.Println(results.Results[i].Fuzz)
+	fmt.Printf("\033[34m[i]\033[0m ResultsData file successfully parsed:\n")
+	fmt.Printf("\033[34m[i]\033[0m Entries: %d\n", len(ResultsData.Results))
+
+	if general.FileExists(Configuration.FfufBodiesFolder) {
+		fmt.Printf("\033[32m[i]\033[0m Enriching result data based on header/body of each request!\n")
+		results.EnrichResults(Configuration.FfufBodiesFolder, &ResultsData.Results)
 	}
 
-	// case 1: body path exists
-	// enrich loaded json with more meta data
-	// case 2: body path does not exist
-	// do nothing
+	for i := 0; i < len(ResultsData.Results); i++ {
+		fmt.Println(ResultsData.Results[i])
+	}
 
 	// determine which metadata type has no uniqueness
 	// make json file entries unique
