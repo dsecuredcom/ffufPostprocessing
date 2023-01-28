@@ -2,9 +2,11 @@ package results
 
 import (
 	"fmt"
+	"github.com/Damian89/ffufPostprocessing/pkg/general"
 	_struct "github.com/Damian89/ffufPostprocessing/pkg/struct"
 	"os"
 	"strings"
+	"sync"
 )
 
 func EnrichResultsWithRedirectData(Entries *[]_struct.Result) {
@@ -16,27 +18,37 @@ func EnrichResultsWithRedirectData(Entries *[]_struct.Result) {
 }
 func EnrichResults(FfufBodiesFolder string, Entries *[]_struct.Result) {
 
+	sem := make(chan struct{}, 25)
+	var wg sync.WaitGroup
 	for i := 0; i < len(*Entries); i++ {
+		wg.Add(1)
 
-		FfufBodiesFolder = strings.TrimRight(FfufBodiesFolder, "/") + "/"
-		BodyFilePath := fmt.Sprintf("%s/%s", FfufBodiesFolder, (*Entries)[i].Resultfile)
-		ContentFile, err := os.ReadFile(BodyFilePath)
+		go func(i int) {
+			defer wg.Done()
+			sem <- struct{}{}
+			FfufBodiesFolder = strings.TrimRight(FfufBodiesFolder, "/") + "/"
+			BodyFilePath := fmt.Sprintf("%s/%s", FfufBodiesFolder, (*Entries)[i].Resultfile)
+			ContentFile, _ := os.ReadFile(BodyFilePath)
 
-		if err != nil {
-			//fmt.Printf("\u001B[31m[x]\u001B[0m Could not load body file: %s\n", BodyFilePath)
-			continue
-		}
+			if general.FileExists(BodyFilePath) == false {
+				<-sem
+				return
+			}
 
-		Content := string(ContentFile)
-		Headers, Body := SeperateContentIntoHeadersAndBody(Content)
+			Content := string(ContentFile)
+			Headers, Body := SeperateContentIntoHeadersAndBody(Content)
 
-		(*Entries)[i].CountHeaders = CountHeaders(Headers)
-		(*Entries)[i].LengthTitle = CalculateTitleLength(Body)
-		(*Entries)[i].WordsTitle = CalculateTitleWords(Body)
-		(*Entries)[i].CountCssFiles = CountCssFiles(Body)
-		(*Entries)[i].CountJsFiles = CountJsFiles(Body)
-		(*Entries)[i].CountTags = CountTags((*Entries)[i].ContentType, Body)
+			(*Entries)[i].CountHeaders = CountHeaders(Headers)
+			(*Entries)[i].LengthTitle = CalculateTitleLength(Body)
+			(*Entries)[i].WordsTitle = CalculateTitleWords(Body)
+			(*Entries)[i].CountCssFiles = CountCssFiles(Body)
+			(*Entries)[i].CountJsFiles = CountJsFiles(Body)
+			(*Entries)[i].CountTags = CountTags((*Entries)[i].ContentType, Body)
+			<-sem
+		}(i)
+
 	}
+	wg.Wait()
 }
 
 func SeperateContentIntoHeadersAndBody(Content string) (string, string) {
