@@ -61,9 +61,6 @@ func main() {
 
 	for i := 0; i < len(ResultsData.Results); i++ {
 		fmt.Println(ResultsData.Results[i])
-		if i == 3 {
-			//break
-		}
 	}
 
 	// determine which metadata type has no uniqueness
