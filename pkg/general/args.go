@@ -14,6 +14,7 @@ func GetArguments() _struct.Configuration {
 	DeleteAllBodyFiles := flag.Bool("delete-all-bodies", false, "Delete unnecessary body files")
 	OverwriteResultFile := flag.Bool("overwrite-result-file", false, "Overwrite original result file")
 	GenerateHtmlReport := flag.Bool("generate-html-report", false, "Generate HTML report")
+	HtmlReportPath := flag.String("html-report-path", "", "Path to the HTML report")
 
 	flag.Parse()
 
@@ -25,5 +26,6 @@ func GetArguments() _struct.Configuration {
 		DeleteAllBodyFiles:         *DeleteAllBodyFiles,
 		OverwriteResultFile:        *OverwriteResultFile,
 		GenerateHtmlReport:         *GenerateHtmlReport,
+		HtmlReportPath:             *HtmlReportPath,
 	}
 }

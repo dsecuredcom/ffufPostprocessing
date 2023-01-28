@@ -8,4 +8,5 @@ type Configuration struct {
 	DeleteAllBodyFiles         bool
 	OverwriteResultFile        bool
 	GenerateHtmlReport         bool
+	HtmlReportPath             string
 }
