@@ -9,7 +9,6 @@ func GetArguments() _struct.Configuration {
 
 	OriginalFfufResultFile := flag.String("result-file", "", "Path to the original ffuf result file")
 	NewFfufResultFile := flag.String("new-result-file", "", "Path to the new ffuf result file")
-
 	FfufBodiesFolder := flag.String("bodies-folder", "", "Path to the ffuf bodies folder")
 	DeleteUnnecessaryBodyFiles := flag.Bool("delete-bodies", false, "Delete unnecessary body files")
 	OverwriteResultFile := flag.Bool("overwrite-result-file", false, "Overwrite original result file")
