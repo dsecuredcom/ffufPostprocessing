@@ -23,7 +23,7 @@ func EnrichResults(FfufBodiesFolder string, Entries *[]_struct.Result) {
 		ContentFile, err := os.ReadFile(BodyFilePath)
 
 		if err != nil {
-			fmt.Printf("\u001B[31m[x]\u001B[0m Could not load body file: %s\n", BodyFilePath)
+			//fmt.Printf("\u001B[31m[x]\u001B[0m Could not load body file: %s\n", BodyFilePath)
 			continue
 		}
 

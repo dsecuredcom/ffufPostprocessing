@@ -48,6 +48,10 @@ func main() {
 		fmt.Printf("\033[34m[!]\033[0m Unnecessary bodies \033[31mwill be deleted\033[0m after analysis\n")
 	}
 
+	if Configuration.GenerateHtmlReport && Configuration.HtmlReportPath != "" {
+		fmt.Printf("\033[34m[i] HTML Datatables report will ge generated and saved to: %s\033[0m\n", Configuration.HtmlReportPath)
+	}
+
 	fmt.Printf("\033[34m[i]\033[0m Loading results file\n")
 
 	jsonFile := general.LoadJsonFile(Configuration.OriginalFfufResultFile)
@@ -170,8 +174,9 @@ func main() {
 
 			NormalizedPath := strings.TrimRight(Configuration.FfufBodiesFolder, "/") + "/"
 			NormalizedPath += Filename
-			os.Remove(NormalizedPath)
-
+			if general.FileExists(NormalizedPath) {
+				os.Remove(NormalizedPath)
+			}
 			<-sem
 		}(Filename)
 	}
