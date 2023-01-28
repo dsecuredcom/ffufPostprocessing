@@ -2,7 +2,6 @@ package general
 
 import (
 	"os"
-	"strings"
 )
 
 func FileExists(File string) bool {
@@ -32,12 +31,4 @@ func SaveJsonToFile(File string) *os.File {
 	}
 
 	return FileOs
-}
-
-func DeleteFiles(folder string, Files []string) {
-	NormalizedPath := strings.TrimRight(folder, "/") + "/"
-	for i := 0; i < len(Files); i++ {
-		CompletePath := NormalizedPath + Files[i]
-		os.Remove(CompletePath)
-	}
 }

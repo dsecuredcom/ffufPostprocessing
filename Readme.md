@@ -23,10 +23,10 @@ Usage of ./ffufPostprocessing:
         Path to the original ffuf result file
   -bodies-folder string
         Path to the ffuf bodies folder (optional, if set results will be better)
-  -delete-bodies
-        Delete unnecessary body files (optional)
   -new-result-file string
         Path to the new ffuf result file (optional)
+  -delete-bodies
+        Delete unnecessary body files (optional)
   -overwrite-result-file
         Overwrite original result file (optional)
 ```
@@ -65,3 +65,4 @@ go build -o dist/ffufPostprocessing main.go
 
 ## License
 
+I don't care. Do whatever you want with this tool.

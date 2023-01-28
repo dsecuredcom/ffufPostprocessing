@@ -8,6 +8,8 @@ import (
 	_struct "github.com/Damian89/ffufPostprocessing/pkg/struct"
 	"io"
 	"os"
+	"strings"
+	"sync"
 )
 
 func main() {
@@ -129,13 +131,31 @@ func main() {
 		string(NewResultsDataJson),
 	)
 
-	if Configuration.DeleteUnnecessaryBodyFiles {
-		fmt.Printf("\033[32m[i]\033[0m Deleting unnecessary body files\n")
-		general.DeleteFiles(Configuration.FfufBodiesFolder, ResultFileNamesToBeDeleted)
-	}
-
 	for i := 0; i < len(NewResultsData.Results); i++ {
 		//general.PrintEntry(NewResultsData.Results[i])
 	}
+
+	if Configuration.DeleteUnnecessaryBodyFiles == false {
+		return
+	}
+
+	fmt.Printf("\033[32m[i]\033[0m Deleting unnecessary body files\n")
+	sem := make(chan struct{}, 25)
+	var wg sync.WaitGroup
+	for _, Filename := range ResultFileNamesToBeDeleted {
+		wg.Add(1)
+
+		go func(Filename string) {
+			defer wg.Done()
+			sem <- struct{}{}
+
+			NormalizedPath := strings.TrimRight(Configuration.FfufBodiesFolder, "/") + "/"
+			NormalizedPath += Filename
+			os.Remove(NormalizedPath)
+
+			<-sem
+		}(Filename)
+	}
+	wg.Wait()
 
 }
