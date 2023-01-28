@@ -7,4 +7,5 @@ type Configuration struct {
 	DeleteUnnecessaryBodyFiles bool
 	DeleteAllBodyFiles         bool
 	OverwriteResultFile        bool
+	GenerateHtmlReport         bool
 }
