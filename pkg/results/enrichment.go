@@ -7,10 +7,18 @@ import (
 	"strings"
 )
 
+func EnrichResultsWithRedirectData(Entries *[]_struct.Result) {
+
+	for i := 0; i < len(*Entries); i++ {
+		(*Entries)[i].RedirectDomain = ExtractRedirectDomain((*Entries)[i].RedirectLocation)
+		(*Entries)[i].CountRedirectParameters = CountRedirectParameters((*Entries)[i].RedirectLocation)
+	}
+}
 func EnrichResults(FfufBodiesFolder string, Entries *[]_struct.Result) {
 
 	for i := 0; i < len(*Entries); i++ {
 
+		FfufBodiesFolder = strings.TrimRight(FfufBodiesFolder, "/") + "/"
 		BodyFilePath := fmt.Sprintf("%s/%s", FfufBodiesFolder, (*Entries)[i].Resultfile)
 		ContentFile, err := os.ReadFile(BodyFilePath)
 
@@ -23,13 +31,11 @@ func EnrichResults(FfufBodiesFolder string, Entries *[]_struct.Result) {
 		Headers, Body := SeperateContentIntoHeadersAndBody(Content)
 
 		(*Entries)[i].CountHeaders = CountHeaders(Headers)
-		(*Entries)[i].RedirectDomain = ExtractRedirectDomain((*Entries)[i].RedirectLocation)
-		(*Entries)[i].CountRedirectParameters = CountRedirectParameters((*Entries)[i].RedirectLocation)
 		(*Entries)[i].LengthTitle = CalculateTitleLength(Body)
 		(*Entries)[i].WordsTitle = CalculateTitleWords(Body)
 		(*Entries)[i].CountCssFiles = CountCssFiles(Body)
 		(*Entries)[i].CountJsFiles = CountJsFiles(Body)
-
+		(*Entries)[i].CountTags = CountTags((*Entries)[i].ContentType, Body)
 	}
 }
 

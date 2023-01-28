@@ -5,4 +5,5 @@ type Configuration struct {
 	NewFfufResultFile          string
 	FfufBodiesFolder           string
 	DeleteUnnecessaryBodyFiles bool
+	OverwriteResultFile        bool
 }

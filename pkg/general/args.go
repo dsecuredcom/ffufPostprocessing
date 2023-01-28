@@ -12,6 +12,7 @@ func GetArguments() _struct.Configuration {
 
 	FfufBodiesFolder := flag.String("bodies-folder", "", "Path to the ffuf bodies folder")
 	DeleteUnnecessaryBodyFiles := flag.Bool("delete-bodies", false, "Delete unnecessary body files")
+	OverwriteResultFile := flag.Bool("overwrite-result-file", false, "Overwrite original result file")
 
 	flag.Parse()
 
@@ -20,5 +21,6 @@ func GetArguments() _struct.Configuration {
 		NewFfufResultFile:          *NewFfufResultFile,
 		FfufBodiesFolder:           *FfufBodiesFolder,
 		DeleteUnnecessaryBodyFiles: *DeleteUnnecessaryBodyFiles,
+		OverwriteResultFile:        *OverwriteResultFile,
 	}
 }

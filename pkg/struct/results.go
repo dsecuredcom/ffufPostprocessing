@@ -22,11 +22,13 @@ type Result struct {
 	Resultfile              string `json:"resultfile"`
 	Url                     string `json:"url"`
 	Host                    string `json:"host"`
-	CountHeaders            any    `json:"count-headers"`
-	RedirectDomain          any    `json:"redirect-domain"`
-	CountRedirectParameters any    `json:"count-redirect-parameters"`
-	LengthTitle             any    `json:"length-title"`
-	WordsTitle              any    `json:"words-title"`
-	CountCssFiles           any    `json:"count-css-files"`
-	CountJsFiles            any    `json:"count-js-files"`
+	CountHeaders            string `json:"count-headers"`
+	RedirectDomain          string `json:"redirect-domain"`
+	CountRedirectParameters string `json:"count-redirect-parameters"`
+	LengthTitle             string `json:"length-title"`
+	WordsTitle              string `json:"words-title"`
+	CountCssFiles           string `json:"count-css-files"`
+	CountJsFiles            string `json:"count-js-files"`
+	CountTags               string `json:"count-tags"`
+	DropEntry               bool   `json:"drop-entry"`
 }
