@@ -4,7 +4,7 @@ import (
 	"fmt"
 	_struct "github.com/Damian89/ffufPostprocessing/pkg/struct"
 	"os"
-	"regexp"
+	"strings"
 )
 
 func EnrichResults(FfufBodiesFolder string, Entries *[]_struct.Result) {
@@ -22,21 +22,55 @@ func EnrichResults(FfufBodiesFolder string, Entries *[]_struct.Result) {
 		Content := string(ContentFile)
 		Headers, Body := SeperateContentIntoHeadersAndBody(Content)
 
-		(*Entries)[i].CountHeaders = len(Headers)
-		(*Entries)[i].RedirectDomain = len(Body)
-		(*Entries)[i].CountRedirectParameters = "123"
-		(*Entries)[i].LengthTitle = "123"
-		(*Entries)[i].WordsTitle = "123"
-		(*Entries)[i].CountCssFiles = "123"
-		(*Entries)[i].CountJsFiles = "123"
+		(*Entries)[i].CountHeaders = CountHeaders(Headers)
+		(*Entries)[i].RedirectDomain = ExtractRedirectDomain((*Entries)[i].RedirectLocation)
+		(*Entries)[i].CountRedirectParameters = CountRedirectParameters((*Entries)[i].RedirectLocation)
+		(*Entries)[i].LengthTitle = CalculateTitleLength(Body)
+		(*Entries)[i].WordsTitle = CalculateTitleWords(Body)
+		(*Entries)[i].CountCssFiles = CountCssFiles(Body)
+		(*Entries)[i].CountJsFiles = CountJsFiles(Body)
 
 	}
 }
 
 func SeperateContentIntoHeadersAndBody(Content string) (string, string) {
-	// @ TODO: This is not working properly, it is not seperating headers and body correctly
-	re := regexp.MustCompile("(?m)\\^.\\*$")
-	match := re.FindAllString(Content, -1)
-	panic(match[0])
-	return "", ""
+
+	/**
+	* This could be done WAY better with a solid regular expression I guess, but I had no time to test - so here is the
+	* stupid guys solution. If you read this, please feel free to improve this function!
+	 */
+	EntireResponseArray := strings.Split(Content, "---- ↑ Request ---- Response ↓ ----")
+
+	EntireResponse := strings.Trim(EntireResponseArray[1], "\r\n")
+
+	HeaderString := ""
+	BodyString := ""
+
+	EntireResponseByLine := strings.Split(EntireResponse, "\n")
+	var line string
+	stringToAddLineTo := "header"
+
+	for i := 0; i < len(EntireResponseByLine); i++ {
+		// First line is something like: HTTP/1.1 200 OK
+		if i == 0 {
+			continue
+		}
+
+		// Removes whitespaces at the end of current line, drops basically \r and \n at the end
+		line = strings.TrimRight(strings.TrimRight(EntireResponseByLine[i], "\n"), "\r")
+
+		if stringToAddLineTo == "header" {
+			HeaderString += line + "\n"
+		} else {
+			BodyString += line + "\n"
+		}
+
+		if line == "" {
+			stringToAddLineTo = "body"
+		}
+	}
+
+	HeaderString = (strings.Trim(HeaderString, "\r\n"))
+	BodyString = (strings.Trim(BodyString, "\r\n"))
+	return HeaderString, BodyString
 }
