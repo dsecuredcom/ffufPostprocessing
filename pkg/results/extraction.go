@@ -33,6 +33,7 @@ func CountTags(ContentType string, Body string) string {
 	}
 
 	//@TODO: Implement other content types?
+
 	return "0"
 }
 

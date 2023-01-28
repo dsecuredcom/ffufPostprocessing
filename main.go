@@ -73,8 +73,8 @@ func main() {
 
 	fmt.Printf("\033[32m[i]\033[0m Filtering results!\n")
 
-	// This simply minifies the results using a md5 hash of the meta data,
-	// if a hash occures more then 5 times, other entries will be marked as
+	// This simply minifies the results using a md5 hash of the metadata,
+	// if a hash occurs more than 5 times, other entries will be marked as
 	// "irrelevant"
 	results.MinimizeOriginalResults(&ResultsData.Results)
 

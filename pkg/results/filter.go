@@ -21,8 +21,8 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) {
 		Content += (*Entries)[i].RedirectDomain + ":"
 		Content += (*Entries)[i].CountRedirectParameters + ":"
 
-		// @TODO Those won't exist in the original results file
-		// When bodies are not present, we way run into errors here
+		//@TODO: Those won't exist in the original results file
+		// 		 When bodies are not present, we way run into errors here
 		Content += (*Entries)[i].CountHeaders + ":"
 		Content += (*Entries)[i].LengthTitle + ":"
 		Content += (*Entries)[i].WordsTitle + ":"
