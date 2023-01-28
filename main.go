@@ -42,7 +42,9 @@ func main() {
 		return
 	}
 
-	if Configuration.DeleteUnnecessaryBodyFiles {
+	if Configuration.DeleteAllBodyFiles && Configuration.FfufBodiesFolder != "" {
+		fmt.Printf("\033[34m[!]\033[0m ALL bodies \033[31mwill be deleted\033[0m after analysis\n")
+	} else if Configuration.DeleteUnnecessaryBodyFiles && Configuration.FfufBodiesFolder != "" {
 		fmt.Printf("\033[34m[!]\033[0m Unnecessary bodies \033[31mwill be deleted\033[0m after analysis\n")
 	}
 
@@ -96,7 +98,14 @@ func main() {
 
 		if ResultsData.Results[i].DropEntry == false {
 			NewResultsData.Results = append(NewResultsData.Results, ResultsData.Results[i])
-		} else {
+		}
+
+		if Configuration.DeleteAllBodyFiles && Configuration.FfufBodiesFolder != "" {
+			ResultFileNamesToBeDeleted = append(ResultFileNamesToBeDeleted, ResultsData.Results[i].Resultfile)
+			continue
+		}
+
+		if ResultsData.Results[i].DropEntry == true && Configuration.DeleteUnnecessaryBodyFiles && Configuration.FfufBodiesFolder != "" {
 			ResultFileNamesToBeDeleted = append(ResultFileNamesToBeDeleted, ResultsData.Results[i].Resultfile)
 		}
 
@@ -135,11 +144,21 @@ func main() {
 		//general.PrintEntry(NewResultsData.Results[i])
 	}
 
-	if Configuration.DeleteUnnecessaryBodyFiles == false {
+	if Configuration.DeleteUnnecessaryBodyFiles == false && Configuration.DeleteAllBodyFiles == false {
 		return
 	}
 
-	fmt.Printf("\033[32m[i]\033[0m Deleting unnecessary body files\n")
+	if Configuration.FfufBodiesFolder == "" {
+		fmt.Printf("\033[31m[x]\033[0m Bodies folder is not set, cannot delete unnecessary files!\n")
+		return
+	}
+
+	if Configuration.DeleteUnnecessaryBodyFiles {
+		fmt.Printf("\033[32m[i]\033[0m Deleting unnecessary body files\n")
+	} else {
+		fmt.Printf("\033[32m[i]\033[0m Deleting all body files\n")
+	}
+
 	sem := make(chan struct{}, 25)
 	var wg sync.WaitGroup
 	for _, Filename := range ResultFileNamesToBeDeleted {
