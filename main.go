@@ -60,7 +60,23 @@ func main() {
 	}
 
 	for i := 0; i < len(ResultsData.Results); i++ {
-		fmt.Println(ResultsData.Results[i])
+		fmt.Printf(
+			"Status: %d; Length: %d; Words: %d; Lines: %d; CT: %s; RF: %s; CH: %d; RDo: %s; CRP: %d; LT: %d; WT: %d; CSS: %d; JS: %d\n",
+			ResultsData.Results[i].Status,
+			ResultsData.Results[i].Length,
+			ResultsData.Results[i].Words,
+			ResultsData.Results[i].Lines,
+			ResultsData.Results[i].ContentType,
+			ResultsData.Results[i].Resultfile,
+			ResultsData.Results[i].CountHeaders,
+			ResultsData.Results[i].RedirectDomain,
+			ResultsData.Results[i].CountRedirectParameters,
+			ResultsData.Results[i].LengthTitle,
+			ResultsData.Results[i].WordsTitle,
+			ResultsData.Results[i].CountCssFiles,
+			ResultsData.Results[i].CountJsFiles,
+		)
+
 	}
 
 	// determine which metadata type has no uniqueness
