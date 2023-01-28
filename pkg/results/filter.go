@@ -39,7 +39,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) {
 			UniqueMd5Hashes[md5Hash]++
 		}
 
-		if UniqueMd5Hashes[md5Hash] >= 10 {
+		if UniqueMd5Hashes[md5Hash] >= 5 {
 			(*Entries)[i].DropEntry = true
 		}
 	}

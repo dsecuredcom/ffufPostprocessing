@@ -73,10 +73,17 @@ func main() {
 
 	fmt.Printf("\033[32m[i]\033[0m Filtering results!\n")
 
+	// This simply minifies the results using a md5 hash of the meta data,
+	// if a hash occures more then 5 times, other entries will be marked as
+	// "irrelevant"
 	results.MinimizeOriginalResults(&ResultsData.Results)
 
-	NewResultsData := ResultsData
+	//@TODO: Based on experience the function above will work on a lot cases but not all
+	//       The same method which is used in NEO CMAS should be implemented here
+	//       This will be done in the future
 
+	// Copy original json to new one and clean the results
+	NewResultsData := ResultsData
 	NewResultsData.Results = []_struct.Result{}
 
 	ResultFileNamesToBeDeleted := []string{}
