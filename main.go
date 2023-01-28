@@ -8,6 +8,7 @@ import (
 	_struct "github.com/Damian89/ffufPostprocessing/pkg/struct"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -172,8 +173,9 @@ func main() {
 			defer wg.Done()
 			sem <- struct{}{}
 
-			NormalizedPath := strings.TrimRight(Configuration.FfufBodiesFolder, "/") + "/"
-			NormalizedPath += Filename
+			NormalizedPath := strings.TrimRight(Configuration.FfufBodiesFolder, "/\\")
+			NormalizedPath = filepath.Join(NormalizedPath, Filename)
+
 			if general.FileExists(NormalizedPath) {
 				os.Remove(NormalizedPath)
 			}

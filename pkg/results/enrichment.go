@@ -1,10 +1,10 @@
 package results
 
 import (
-	"fmt"
 	"github.com/Damian89/ffufPostprocessing/pkg/general"
 	_struct "github.com/Damian89/ffufPostprocessing/pkg/struct"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -26,8 +26,8 @@ func EnrichResults(FfufBodiesFolder string, Entries *[]_struct.Result) {
 		go func(i int) {
 			defer wg.Done()
 			sem <- struct{}{}
-			FfufBodiesFolder = strings.TrimRight(FfufBodiesFolder, "/") + "/"
-			BodyFilePath := fmt.Sprintf("%s/%s", FfufBodiesFolder, (*Entries)[i].Resultfile)
+			FfufBodiesFolder = strings.TrimRight(FfufBodiesFolder, "/\\")
+			BodyFilePath := filepath.Join(FfufBodiesFolder, (*Entries)[i].Resultfile)
 			ContentFile, _ := os.ReadFile(BodyFilePath)
 
 			if general.FileExists(BodyFilePath) == false {
