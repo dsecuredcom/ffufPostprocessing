@@ -12,6 +12,9 @@ run after ffuf has finished. Additionally, the initial ffuf command should be ru
 This forces ffuf to write a summary file in json format as well as bodies of the responses to disk. 
 Adding "-od" is not mandatory but recommended.
 
+I highly recommend NOT to use the "-ac" flag - especially if you don't want to miss cool stuff and want to use this
+post-processing tool.
+
 ## Usage
 
 ```
@@ -53,20 +56,11 @@ It will keep X of them in the data set.
 
 ffufPostprocessing requires golang 1.19
 
-### Releases
-...
-
 ### Build from source
 
 ```
 cd ffufPostprocessing
 go build -o dist/ffufPostprocessing main.go
-```
-
-### Docker (tbd)
-    
-```
-docker build -t ffufPostprocessing .
 ```
 
 ## License
