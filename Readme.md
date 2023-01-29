@@ -53,7 +53,7 @@ If it turns out that one of those values is always different (e.g. the title of 
 will be skipped for the uniqueness check.
 
 In general this tool will always keep a small amount of entries which are _not_ unique. For example, if the results json file
-contains 300x http status 403 (with size, length, ... identical) and 2 unique http status 200 responses, it won't drop all 300 http status 403 entries. 
+contains 300x http status 403 (with words, length, ... identical) and 2 unique http status 200 responses, it won't drop all 300 http status 403 entries. 
 It will keep X of them in the data set.
 
 ## Install
