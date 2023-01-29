@@ -1,6 +1,7 @@
 package results
 
 import (
+	"fmt"
 	_struct "github.com/Damian89/ffufPostprocessing/pkg/struct"
 	"strconv"
 )
@@ -8,7 +9,7 @@ import (
 func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 
 	UniqueStatusMd5 := map[string]int{}
-	UniqueStatusSizeMd5 := map[string]int{}
+	UniqueStatusLengthMd5 := map[string]int{}
 	UniqueStatusWordsMd5 := map[string]int{}
 	UniqueStatusLinesMd5 := map[string]int{}
 	UniqueStatusContentTypeMd5 := map[string]int{}
@@ -20,11 +21,11 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 	UniqueJsFilesMd5 := map[string]int{}
 	UniqueTagsMd5 := map[string]int{}
 	UniqueHttpStatusHeaderCountMd5 := map[string]int{}
-	MeanSize := 0
+	MeanSize := 0.0
 
 	for i := 0; i < len(*Entries); i++ {
 		AnalyzeByHttpStatus(Entries, i, &UniqueStatusMd5)
-		AnalyzeByHttpStatusAndSize(Entries, i, &UniqueStatusSizeMd5)
+		AnalyzeByHttpStatusAndLength(Entries, i, &UniqueStatusLengthMd5)
 		AnalyzeByHttpStatusAndWords(Entries, i, &UniqueStatusWordsMd5)
 		AnalyzeByHttpStatusAndLines(Entries, i, &UniqueStatusLinesMd5)
 		AnalyzeByHttpStatusAndContentType(Entries, i, &UniqueStatusContentTypeMd5)
@@ -36,10 +37,10 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		AnalyzeByJsFiles(Entries, i, &UniqueJsFilesMd5)
 		AnalyzeByTags(Entries, i, &UniqueTagsMd5)
 		AnalyzeByHttpStatusAndHeadersCount(Entries, i, &UniqueHttpStatusHeaderCountMd5)
-		MeanSize += (*Entries)[i].Length
+		MeanSize += float64((*Entries)[i].Length)
 	}
 
-	MeanSize = MeanSize / len(*Entries)
+	MeanSize = MeanSize / float64(len(*Entries))
 
 	TemporaryCleanedResults := []_struct.Result{}
 	PositionsDone := map[int]bool{}
@@ -50,13 +51,19 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 			continue
 		}
 
-		Content := "status:" + strconv.Itoa((*Entries)[i].Status)
+		DevFloat := float64((*Entries)[i].Length) / MeanSize
 
-		if UniqueStatusMd5[Content] > 0 && ContentCounterMap[Content] < 2 {
+		Dev := fmt.Sprintf("%f", DevFloat)
+		Content := "dev:" + Dev
+
+		if DevFloat > 2.0 && ContentCounterMap[Content] < 1 {
+			(*Entries)[i].KeepReason = "deviation (" + Dev + ")"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
+
 		}
+
 	}
 
 	for i := 0; i < len(*Entries); i++ {
@@ -64,9 +71,10 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 			continue
 		}
 
-		Content := "status-size:" + strconv.Itoa((*Entries)[i].Status) + ":" + strconv.Itoa((*Entries)[i].Length)
+		Content := "status-length:" + strconv.Itoa((*Entries)[i].Status) + ":" + strconv.Itoa((*Entries)[i].Length)
 
-		if UniqueStatusSizeMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+		if UniqueStatusLengthMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "http status + length"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
@@ -81,6 +89,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		Content := "status-words:" + strconv.Itoa((*Entries)[i].Status) + ":" + strconv.Itoa((*Entries)[i].Words)
 
 		if UniqueStatusWordsMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "http status + words"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
@@ -95,6 +104,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		Content := "status-lines:" + strconv.Itoa((*Entries)[i].Status) + ":" + strconv.Itoa((*Entries)[i].Lines)
 
 		if UniqueStatusLinesMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "http status + lines"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
@@ -109,6 +119,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		Content := "status-type:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].ContentType
 
 		if UniqueStatusContentTypeMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "http status + content type"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
@@ -123,6 +134,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		Content := "status-redirect:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].RedirectDomain + ":" + (*Entries)[i].CountRedirectParameters
 
 		if UniqueStatusRedirectAndParameters[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "http status + redirect"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
@@ -137,6 +149,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		Content := "status-header-count:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].CountHeaders
 
 		if UniqueHttpStatusHeaderCountMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "http status + header count"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
@@ -151,6 +164,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		Content := "title-length:" + (*Entries)[i].LengthTitle
 
 		if UniqueTitleLengthMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "title length"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
@@ -165,6 +179,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		Content := "title-words:" + (*Entries)[i].WordsTitle
 
 		if UniqueTitleWordsMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "title words"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
@@ -179,6 +194,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		Content := "title-length-words:" + (*Entries)[i].WordsTitle + ":" + (*Entries)[i].LengthTitle
 
 		if UniqueTitleLinesWordsMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "title length + words"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
@@ -193,6 +209,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		Content := "css:" + (*Entries)[i].CountCssFiles
 
 		if UniqueCssFilesMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "css files"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
@@ -207,6 +224,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		Content := "js:" + (*Entries)[i].CountJsFiles
 
 		if UniqueJsFilesMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "js files"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
@@ -221,6 +239,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		Content := "tags:" + (*Entries)[i].CountTags
 
 		if UniqueTagsMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "tags"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
@@ -232,16 +251,14 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 			continue
 		}
 
-		Dev := (*Entries)[i].Length / MeanSize
-		Content := "dev:" + strconv.Itoa(Dev)
+		Content := "status:" + strconv.Itoa((*Entries)[i].Status)
 
-		if Dev != 1 && ContentCounterMap[Content] < 2 {
+		if UniqueStatusMd5[Content] > 0 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "http status"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
-
 		}
-
 	}
 
 	return TemporaryCleanedResults
@@ -259,13 +276,13 @@ func AnalyzeByHttpStatus(Entries *[]_struct.Result, i int, StatusMd5 *map[string
 
 }
 
-func AnalyzeByHttpStatusAndSize(Entries *[]_struct.Result, i int, StatusSizesMd5 *map[string]int) {
-	Content := "status-size:" + strconv.Itoa((*Entries)[i].Status) + ":" + strconv.Itoa((*Entries)[i].Length)
+func AnalyzeByHttpStatusAndLength(Entries *[]_struct.Result, i int, StatusLengthMd5 *map[string]int) {
+	Content := "status-length:" + strconv.Itoa((*Entries)[i].Status) + ":" + strconv.Itoa((*Entries)[i].Length)
 
-	if (*StatusSizesMd5)[Content] == 0 {
-		(*StatusSizesMd5)[Content] = 1
+	if (*StatusLengthMd5)[Content] == 0 {
+		(*StatusLengthMd5)[Content] = 1
 	} else {
-		(*StatusSizesMd5)[Content]++
+		(*StatusLengthMd5)[Content]++
 	}
 
 }
