@@ -13,6 +13,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 	UniqueStatusWordsMd5 := map[string]int{}
 	UniqueStatusLinesMd5 := map[string]int{}
 	UniqueStatusContentTypeMd5 := map[string]int{}
+	UniqueWordsContentTypeMd5 := map[string]int{}
 	UniqueStatusRedirectAndParameters := map[string]int{}
 	UniqueTitleLengthMd5 := map[string]int{}
 	UniqueTitleWordsMd5 := map[string]int{}
@@ -21,7 +22,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 	UniqueJsFilesMd5 := map[string]int{}
 	UniqueTagsMd5 := map[string]int{}
 	UniqueHttpStatusHeaderCountMd5 := map[string]int{}
-	MeanOfLength := 0.0
+	var MeanOfLength float64 = 0
 
 	for i := 0; i < len(*Entries); i++ {
 		AnalyzeByHttpStatus(Entries, i, &UniqueStatusMd5)
@@ -29,6 +30,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		AnalyzeByHttpStatusAndWords(Entries, i, &UniqueStatusWordsMd5)
 		AnalyzeByHttpStatusAndLines(Entries, i, &UniqueStatusLinesMd5)
 		AnalyzeByHttpStatusAndContentType(Entries, i, &UniqueStatusContentTypeMd5)
+		AnalyzeByWordsAndContentType(Entries, i, &UniqueWordsContentTypeMd5)
 		AnalyzeByHttpStatusAndRedirectData(Entries, i, &UniqueStatusRedirectAndParameters)
 		AnalyzeByTitleLength(Entries, i, &UniqueTitleLengthMd5)
 		AnalyzeByTitleWords(Entries, i, &UniqueTitleWordsMd5)
@@ -105,6 +107,21 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 
 		if UniqueStatusLinesMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
 			(*Entries)[i].KeepReason = "http status + lines"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "words-content-type:" + strconv.Itoa((*Entries)[i].Words) + ":" + (*Entries)[i].ContentType
+
+		if UniqueWordsContentTypeMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "words + content type"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
@@ -262,6 +279,17 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 	}
 
 	return TemporaryCleanedResults
+}
+
+func AnalyzeByWordsAndContentType(Entries *[]_struct.Result, i int, Hashes *map[string]int) {
+
+	Content := "words-content-type:" + strconv.Itoa((*Entries)[i].Words) + ":" + (*Entries)[i].ContentType
+
+	if (*Hashes)[Content] == 0 {
+		(*Hashes)[Content] = 1
+	} else {
+		(*Hashes)[Content]++
+	}
 }
 
 func AnalyzeByHttpStatus(Entries *[]_struct.Result, i int, StatusMd5 *map[string]int) {
