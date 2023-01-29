@@ -23,7 +23,8 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 	UniqueStatusJsCssFilesMd5 := map[string]int{}
 	UniqueTagsMd5 := map[string]int{}
 	UniqueHttpStatusHeaderCountMd5 := map[string]int{}
-	var MeanOfLength float64 = 0
+	UniqueLengthSumPerHttpStatus := map[string]float64{}
+	UniqueMeanLengthPerHttpStatus := map[string]float64{}
 
 	for i := 0; i < len(*Entries); i++ {
 		AnalyzeByHttpStatus(Entries, i, &UniqueStatusMd5)
@@ -41,11 +42,11 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		AnalyzeByHttpStatusJsCssFiles(Entries, i, &UniqueStatusJsCssFilesMd5)
 		AnalyzeByTags(Entries, i, &UniqueTagsMd5)
 		AnalyzeByHttpStatusAndHeadersCount(Entries, i, &UniqueHttpStatusHeaderCountMd5)
+		CalculateLengthSumPerHttpStatus(Entries, i, &UniqueLengthSumPerHttpStatus)
 
-		MeanOfLength += float64((*Entries)[i].Length)
 	}
 
-	MeanOfLength = MeanOfLength / float64(len(*Entries))
+	CalculateMeanLengthPerHttpStatus(&UniqueStatusMd5, &UniqueLengthSumPerHttpStatus, &UniqueMeanLengthPerHttpStatus)
 
 	TemporaryCleanedResults := []_struct.Result{}
 	PositionsDone := map[int]bool{}
@@ -56,12 +57,14 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 			continue
 		}
 
-		DevFloat := float64((*Entries)[i].Length) / MeanOfLength
+		MeanOfCurrentHttpStatus := UniqueMeanLengthPerHttpStatus["status-mean-length:"+strconv.Itoa((*Entries)[i].Status)]
+
+		DevFloat := float64((*Entries)[i].Length) / MeanOfCurrentHttpStatus
 
 		Dev := fmt.Sprintf("%f", DevFloat)
-		Content := "dev:" + Dev
+		Content := "dev:" + strconv.Itoa((*Entries)[i].Status) + Dev
 
-		if DevFloat > 2.0 && ContentCounterMap[Content] < 1 {
+		if DevFloat != 1.0 && ContentCounterMap[Content] <= 2 {
 			(*Entries)[i].KeepReason = "deviation (" + Dev + ")"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
@@ -297,6 +300,21 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 	}
 
 	return TemporaryCleanedResults
+}
+
+func CalculateMeanLengthPerHttpStatus(HttpStatusData *map[string]int, LengthSum *map[string]float64, LengthMean *map[string]float64) {
+	for id, value := range *LengthSum {
+		(*LengthMean)["status-mean-length:"+id] = value / float64((*HttpStatusData)["status:"+id])
+	}
+}
+
+func CalculateLengthSumPerHttpStatus(Entries *[]_struct.Result, i int, Hashes *map[string]float64) {
+	Content := strconv.Itoa((*Entries)[i].Status)
+	if (*Hashes)[Content] == 0 {
+		(*Hashes)[Content] = float64((*Entries)[i].Length)
+	} else {
+		(*Hashes)[Content] = float64((*Entries)[i].Length) + (*Hashes)[Content]
+	}
 }
 
 func AnalyzeByHttpStatusJsCssFiles(Entries *[]_struct.Result, i int, Hashes *map[string]int) {
