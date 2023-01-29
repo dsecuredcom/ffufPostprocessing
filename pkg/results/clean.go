@@ -20,6 +20,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 	UniqueTitleLinesWordsMd5 := map[string]int{}
 	UniqueCssFilesMd5 := map[string]int{}
 	UniqueJsFilesMd5 := map[string]int{}
+	UniqueStatusJsCssFilesMd5 := map[string]int{}
 	UniqueTagsMd5 := map[string]int{}
 	UniqueHttpStatusHeaderCountMd5 := map[string]int{}
 	var MeanOfLength float64 = 0
@@ -37,6 +38,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		AnalyzeByTitleLengthWords(Entries, i, &UniqueTitleLinesWordsMd5)
 		AnalyzeByCssFiles(Entries, i, &UniqueCssFilesMd5)
 		AnalyzeByJsFiles(Entries, i, &UniqueJsFilesMd5)
+		AnalyzeByHttpStatusJsCssFiles(Entries, i, &UniqueStatusJsCssFilesMd5)
 		AnalyzeByTags(Entries, i, &UniqueTagsMd5)
 		AnalyzeByHttpStatusAndHeadersCount(Entries, i, &UniqueHttpStatusHeaderCountMd5)
 
@@ -138,6 +140,21 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 
 		if UniqueStatusContentTypeMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
 			(*Entries)[i].KeepReason = "http status + content type"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "status+js+css:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].CountJsFiles + ":" + (*Entries)[i].CountCssFiles
+
+		if UniqueStatusJsCssFilesMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "status+js+css"
 			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
 			PositionsDone[i] = true
 			ContentCounterMap[Content]++
@@ -280,6 +297,16 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 	}
 
 	return TemporaryCleanedResults
+}
+
+func AnalyzeByHttpStatusJsCssFiles(Entries *[]_struct.Result, i int, Hashes *map[string]int) {
+	Content := "status+js+css:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].CountJsFiles + ":" + (*Entries)[i].CountCssFiles
+
+	if (*Hashes)[Content] == 0 {
+		(*Hashes)[Content] = 1
+	} else {
+		(*Hashes)[Content]++
+	}
 }
 
 func AnalyzeByWordsAndContentType(Entries *[]_struct.Result, i int, Hashes *map[string]int) {
