@@ -21,7 +21,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 	UniqueJsFilesMd5 := map[string]int{}
 	UniqueTagsMd5 := map[string]int{}
 	UniqueHttpStatusHeaderCountMd5 := map[string]int{}
-	MeanSize := 0.0
+	MeanOfLength := 0.0
 
 	for i := 0; i < len(*Entries); i++ {
 		AnalyzeByHttpStatus(Entries, i, &UniqueStatusMd5)
@@ -37,10 +37,10 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		AnalyzeByJsFiles(Entries, i, &UniqueJsFilesMd5)
 		AnalyzeByTags(Entries, i, &UniqueTagsMd5)
 		AnalyzeByHttpStatusAndHeadersCount(Entries, i, &UniqueHttpStatusHeaderCountMd5)
-		MeanSize += float64((*Entries)[i].Length)
+		MeanOfLength += float64((*Entries)[i].Length)
 	}
 
-	MeanSize = MeanSize / float64(len(*Entries))
+	MeanOfLength = MeanOfLength / float64(len(*Entries))
 
 	TemporaryCleanedResults := []_struct.Result{}
 	PositionsDone := map[int]bool{}
@@ -51,7 +51,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 			continue
 		}
 
-		DevFloat := float64((*Entries)[i].Length) / MeanSize
+		DevFloat := float64((*Entries)[i].Length) / MeanOfLength
 
 		Dev := fmt.Sprintf("%f", DevFloat)
 		Content := "dev:" + Dev
