@@ -15,6 +15,7 @@ func GetArguments() _struct.Configuration {
 	OverwriteResultFile := flag.Bool("overwrite-result-file", false, "Overwrite original result file")
 	GenerateHtmlReport := flag.Bool("generate-html-report", false, "Generate HTML report")
 	HtmlReportPath := flag.String("html-report-path", "", "Path to the HTML report")
+	Verbose := flag.Bool("verbose", false, "Verbose mode")
 
 	flag.Parse()
 
@@ -27,5 +28,6 @@ func GetArguments() _struct.Configuration {
 		OverwriteResultFile:        *OverwriteResultFile,
 		GenerateHtmlReport:         *GenerateHtmlReport,
 		HtmlReportPath:             *HtmlReportPath,
+		Verbose:                    *Verbose,
 	}
 }

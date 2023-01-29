@@ -86,5 +86,4 @@ type Result struct {
 	CountCssFiles           string `json:"count-css-files"`
 	CountJsFiles            string `json:"count-js-files"`
 	CountTags               string `json:"count-tags"`
-	DropEntry               bool   `json:"drop-entry"`
 }

@@ -31,6 +31,8 @@ Usage of ./ffufPostprocessing:
         Delete all body files after filtering (optional)
   -overwrite-result-file
         Overwrite original result file (optional)
+  -verbose
+        Verbose mode (Shows currently filtered results) (optional)
 ```
 
 ## Details

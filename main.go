@@ -82,38 +82,23 @@ func main() {
 
 	fmt.Printf("\033[32m[i]\033[0m Filtering results!\n")
 
-	// This simply minifies the results using a md5 hash of the metadata,
-	// if a hash occurs more than 5 times, other entries will be marked as
-	// "irrelevant"
-	results.MinimizeOriginalResults(&ResultsData.Results)
-
-	//@TODO: Based on experience the function above will work on a lot cases but not all
-	//       The same method which is used in NEO CMAS should be implemented here
-	//       This will be done in the future
-
 	// Copy original json to new one and clean the results
 	NewResultsData := ResultsData
-	NewResultsData.Results = []_struct.Result{}
+	NewResultsData.Results = results.MinimizeOriginalResults(&ResultsData.Results)
+
+	EntriesToKeep := map[int]bool{}
+
+	for i := 0; i < len(NewResultsData.Results); i++ {
+		EntriesToKeep[NewResultsData.Results[i].Position] = true
+	}
 
 	ResultFileNamesToBeDeleted := []string{}
 
 	for i := 0; i < len(ResultsData.Results); i++ {
-
-		//general.PrintEntry(ResultsData.Results[i])
-
-		if ResultsData.Results[i].DropEntry == false {
-			NewResultsData.Results = append(NewResultsData.Results, ResultsData.Results[i])
-		}
-
-		if Configuration.DeleteAllBodyFiles && Configuration.FfufBodiesFolder != "" {
-			ResultFileNamesToBeDeleted = append(ResultFileNamesToBeDeleted, ResultsData.Results[i].Resultfile)
-			continue
-		}
-
-		if ResultsData.Results[i].DropEntry == true && Configuration.DeleteUnnecessaryBodyFiles && Configuration.FfufBodiesFolder != "" {
+		_, ok := EntriesToKeep[ResultsData.Results[i].Position]
+		if !ok {
 			ResultFileNamesToBeDeleted = append(ResultFileNamesToBeDeleted, ResultsData.Results[i].Resultfile)
 		}
-
 	}
 
 	fmt.Printf("\033[32m[i]\033[0m Filtering completed\n")
@@ -145,8 +130,10 @@ func main() {
 		string(NewResultsDataJson),
 	)
 
-	for i := 0; i < len(NewResultsData.Results); i++ {
-		//general.PrintEntry(NewResultsData.Results[i])
+	if Configuration.Verbose {
+		for i := 0; i < len(NewResultsData.Results); i++ {
+			general.PrintEntry(NewResultsData.Results[i])
+		}
 	}
 
 	if Configuration.DeleteUnnecessaryBodyFiles == false && Configuration.DeleteAllBodyFiles == false {

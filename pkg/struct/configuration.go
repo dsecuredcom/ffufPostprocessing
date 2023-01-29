@@ -9,4 +9,5 @@ type Configuration struct {
 	OverwriteResultFile        bool
 	GenerateHtmlReport         bool
 	HtmlReportPath             string
+	Verbose                    bool
 }

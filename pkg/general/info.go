@@ -7,8 +7,9 @@ import (
 
 func PrintEntry(Result _struct.Result) {
 	fmt.Printf(
-		"DROP: %v, Status: %d; Length: %d; Words: %d; Lines: %d; CT: %s; RF: %s; CH: %s; RDo: %s; CRP: %s; LT: %s; WT: %s; CSS: %s; JS: %s\n",
-		Result.DropEntry,
+		"#%d -> Fuzz: %s -> Status: %d; Length: %d; Words: %d; Lines: %d; CT: %s; RF: %s; CH: %s; RDo: %s; CRP: %s; LT: %s; WT: %s; CSS: %s; JS: %s\n",
+		Result.Position,
+		Result.Fuzz,
 		Result.Status,
 		Result.Length,
 		Result.Words,
