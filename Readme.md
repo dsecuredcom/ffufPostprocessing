@@ -20,7 +20,7 @@ post-processing tool.
 ```
 Usage of ./ffufPostprocessing:
   -result-file string
-        Path to the original ffuf result file
+        Path to the original ffuf result file (in json format)
   -bodies-folder string
         Path to the ffuf bodies folder (optional, if set results will be better)
   -new-result-file string
