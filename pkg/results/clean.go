@@ -133,7 +133,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 			continue
 		}
 
-		Content := "status-type:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].ContentType
+		Content := "status-content type:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].ContentType
 
 		if UniqueStatusContentTypeMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
 			(*Entries)[i].KeepReason = "http status + content type"
@@ -398,7 +398,7 @@ func AnalyzeByHttpStatusAndRedirectData(Entries *[]_struct.Result, i int, parame
 }
 
 func AnalyzeByHttpStatusAndContentType(Entries *[]_struct.Result, i int, StatusCTMd5 *map[string]int) {
-	Content := "status-type:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].ContentType
+	Content := "status-content type:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].ContentType
 
 	if (*StatusCTMd5)[Content] == 0 {
 		(*StatusCTMd5)[Content] = 1
