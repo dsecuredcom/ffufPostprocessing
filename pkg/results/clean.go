@@ -39,6 +39,7 @@ func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
 		AnalyzeByJsFiles(Entries, i, &UniqueJsFilesMd5)
 		AnalyzeByTags(Entries, i, &UniqueTagsMd5)
 		AnalyzeByHttpStatusAndHeadersCount(Entries, i, &UniqueHttpStatusHeaderCountMd5)
+
 		MeanOfLength += float64((*Entries)[i].Length)
 	}
 
