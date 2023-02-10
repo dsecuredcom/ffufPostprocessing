@@ -21,38 +21,36 @@ type Config struct {
 	CmdInput               string `json:"cmdinput"`
 	InputProviders         any    `json:"inputproviders"`
 	InputShell             string `json:"inputshell"`
-
-	//@TODO: "json":false,
-	//		 "matchers":{"IsCalibrated":false,"Mutex":{},"Matchers":{"status":{"value":"200,301,302,400,401,402,403,405,429,500,502,503,504"}},
-	//		 "Filters":{"status":{"value":"404"}},
-	//		 "PerDomainFilters":{}},
-	//		 "mmode":"or",
-	//		 "maxtime":1200,
-	//		 "maxtime_job":600,
-	//		 "method":"GET",
-	//		 "noninteractive":false,
-	//		 "outputdirectory":"/tmp/ffuf/bodies1",
-	//		 "outputfile":"/tmp/ffuf/results.json",
-	//		 "outputformat":"json",
-	//		 "OutputSkipEmptyFile":false,
-	//		 "proxyurl":"",
-	//		 "quiet":false,
-	//		 "rate":175,
-	//		 "recursion":false,
-	//		 "recursion_depth":0,
-	//		 "recursion_strategy":
-	//		 "default",
-	//		 "replayproxyurl":"",
-	//		 "sni":"",
-	//		 "stop_429":true,
-	//		 "stop_403":false,
-	//		 "stop_all":false,
-	//		 "stop_errors":false,
-	//		 "threads":15,
-	//		 "timeout":5,
-	//		 "url":"https://hirejp.indeed.com/FUZZ",
-	//		 "verbose":true,
-	//		 "http2":false
+	JsonOutput             bool   `json:"json"`
+	Matchers               any    `json:"matchers"`
+	Filters                any    `json:"Filters"`
+	PerDomainFilters       any    `json:"PerDomainFilters"`
+	MMode                  string `json:"mmode"`
+	MaxTime                int    `json:"maxtime"`
+	MaxTimeJob             int    `json:"maxtime_job"`
+	Method                 string `json:"method"`
+	NonInteractive         bool   `json:"noninteractive"`
+	OutputDir              string `json:"outputdirectory"`
+	OutputFile             string `json:"outputfile"`
+	OutputFormat           string `json:"outputformat"`
+	OutputSkipEmptyFiles   bool   `json:"OutputSkipEmptyFile"`
+	ProxyURL               string `json:"proxyurl"`
+	Quite                  bool   `json:"quite"`
+	RateLimit              int    `json:"rate"`
+	Recursion              bool   `json:"recursion"`
+	RecursionDepth         int    `json:"recursion_depth"`
+	RecursionStrategy      string `json:"recursion_strategy"`
+	ReplayProxy            string `json:"replayproxyurl"`
+	SNI                    string `json:"sni"`
+	Stop429                bool   `json:"stop_429"`
+	Stop403                bool   `json:"stop_403"`
+	StopAll                bool   `json:"stop_all"`
+	StopErrors             bool   `json:"stop_errors"`
+	Threads                int    `json:"threads"`
+	Timeout                int    `json:"timeout"`
+	Url                    string `json:"url"`
+	Verbose                bool   `json:"verbose"`
+	Http2                  bool   `json:"http2"`
 }
 
 type Results struct {
