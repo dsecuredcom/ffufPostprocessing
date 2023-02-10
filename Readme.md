@@ -27,8 +27,6 @@ Usage of ./ffufPostprocessing:
         Path to the new ffuf result file (optional)
   -delete-bodies
         Delete unnecessary body files after filtering (optional)
-  -delete-bodies
-        Delete all body files after filtering (optional)
   -overwrite-result-file
         Overwrite original result file (optional)
   -verbose
