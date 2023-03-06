@@ -1,7 +1,7 @@
 # Ffuf: Post processing
-Unfortunately - despite its "-ac" flag, ffuf tends to produce a lot of irrelevant entries. 
-This is why I've created a post-processing tool to filter out those entries. This tool has to be
-run after ffuf has finished. Additionally, the initial ffuf command should be run with the following flags:
+Unfortunately - despite its "-ac" flag, ffuf tends to produce a lot of irrelevant entries. This is why I've created a post-processing tool to filter out those entries. 
+Additionally, I saw a lot of relevant entries removed when "-ac" was used - especially when ffuf encounters json or xml files - "-ac" might drop them entirely.
+This tool has to be run after ffuf has finished. Additionally, the initial ffuf command should be run with the following flags:
 
 ```
 -o /folder/to/results.json
@@ -12,7 +12,7 @@ run after ffuf has finished. Additionally, the initial ffuf command should be ru
 This forces ffuf to write a summary file in json format as well as bodies of the responses to disk. 
 Adding "-od" is not mandatory but recommended.
 
-I highly recommend NOT to use the "-ac" flag - especially if you don't want to miss cool stuff and want to use this
+I highly recommend __NOT to use the "-ac" flag__ - especially if you don't want to miss cool stuff and want to use this
 post-processing tool.
 
 ## Usage
