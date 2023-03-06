@@ -33,6 +33,19 @@ Usage of ./ffufPostprocessing:
         Verbose mode (Shows currently filtered results) (optional)
 ```
 
+## Example
+
+First run ffuf as always - I used a very simple minimalistic command:
+
+```
+./ffuf -u yourtarget.com/FUFF -w /path/to/wordlist -o /tmp/ffuf/results.json -od /tmp/ffuf/bodies/ -of json
+```
+
+After it ran, you should have the result file as well as all bodies in your specified folders. Now it is time to parse the data and filter out the irrelevant entries:
+```
+./ffufPostprocessing -result-file /tmp/ffuf/results.json -bodies-folder /tmp/ffuf/bodies/ -delete-bodies -overwrite-result-file 
+```
+
 ## Details
 
 Especially when -od is set, which means we have all http headers and bodies for each requested url - this tool will initially
