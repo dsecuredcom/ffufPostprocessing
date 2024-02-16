@@ -77,6 +77,10 @@ ffufPostprocessing requires golang 1.19
 cd ffufPostprocessing
 go build -o dist/ffufPostprocessing main.go
 ```
+OR
+```
+go install github.com/Damian89/ffufPostprocessing@latest
+```
 
 ## License
 
