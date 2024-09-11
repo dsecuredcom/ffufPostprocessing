@@ -1,3 +1,3 @@
-module github.com/Damian89/ffufPostprocessing
+module github.com/dsecuredcom/ffufPostprocessing
 
 go 1.19

@@ -2,7 +2,7 @@ package general
 
 import (
 	"flag"
-	_struct "github.com/Damian89/ffufPostprocessing/pkg/struct"
+	_struct "github.com/dsecuredcom/ffufPostprocessing/pkg/struct"
 )
 
 func GetArguments() _struct.Configuration {

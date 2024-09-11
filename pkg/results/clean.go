@@ -2,7 +2,7 @@ package results
 
 import (
 	"fmt"
-	_struct "github.com/Damian89/ffufPostprocessing/pkg/struct"
+	_struct "github.com/dsecuredcom/ffufPostprocessing/pkg/struct"
 	"strconv"
 )
 

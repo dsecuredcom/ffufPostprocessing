@@ -1,8 +1,8 @@
 package results
 
 import (
-	"github.com/Damian89/ffufPostprocessing/pkg/general"
-	_struct "github.com/Damian89/ffufPostprocessing/pkg/struct"
+	"github.com/dsecuredcom/ffufPostprocessing/pkg/general"
+	_struct "github.com/dsecuredcom/ffufPostprocessing/pkg/struct"
 	"os"
 	"path/filepath"
 	"strings"

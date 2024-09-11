@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Damian89/ffufPostprocessing/pkg/general"
-	"github.com/Damian89/ffufPostprocessing/pkg/results"
-	_struct "github.com/Damian89/ffufPostprocessing/pkg/struct"
+	"github.com/dsecuredcom/ffufPostprocessing/pkg/general"
+	"github.com/dsecuredcom/ffufPostprocessing/pkg/results"
+	_struct "github.com/dsecuredcom/ffufPostprocessing/pkg/struct"
 	"io"
 	"os"
 	"path/filepath"

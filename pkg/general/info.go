@@ -2,7 +2,7 @@ package general
 
 import (
 	"fmt"
-	_struct "github.com/Damian89/ffufPostprocessing/pkg/struct"
+	_struct "github.com/dsecuredcom/ffufPostprocessing/pkg/struct"
 )
 
 func PrintEntry(Result _struct.Result) {
