@@ -7,104 +7,65 @@ import (
 	"strings"
 )
 
-func CountTags(ContentType string, Body string) string {
+var (
+	titleRegex  = regexp.MustCompile("(?mi)<title>(.*?)</title>")
+	cssRegex    = regexp.MustCompile(`\.css(\?|)`)
+	jsRegex     = regexp.MustCompile(`\.js(\?|)`)
+	headerRegex = regexp.MustCompile("(.*):(.*)")
+	tagsRegex   = regexp.MustCompile("<(.*?)>")
+	jsonRegex   = regexp.MustCompile("(\"|')(\\s|):(\\s|)(\"|'|)")
+)
 
-	// I could have used switch/case but this reduces the amount of code
-	if strings.Contains(ContentType, "html") {
-		r, _ := regexp.Compile("<(.*?)>")
-		data := r.FindAllString(Body, -1)
-		return strconv.Itoa(len(data))
+func CountTags(contentType, body string) string {
+	if strings.Contains(contentType, "html") || strings.Contains(contentType, "xml") {
+		return strconv.Itoa(len(tagsRegex.FindAllString(body, -1)))
 	}
-
-	// Should work the same as html, but since I am not sure - keep it seperate
-	if strings.Contains(ContentType, "xml") {
-		r, _ := regexp.Compile("<(.*?)>")
-		data := r.FindAllString(Body, -1)
-		return strconv.Itoa(len(data))
+	if strings.Contains(contentType, "json") {
+		return strconv.Itoa(len(jsonRegex.FindAllString(body, -1)))
 	}
-
-	// JSON has obviously no tags, but we can count the number '":" and similar json related syntax'
-	// Obviously this is not perfect, but it should work for most cases
-	// Parsing json is not an option, since it is not a trivial task and costs a lot of performance
-	if strings.Contains(ContentType, "json") {
-		r, _ := regexp.Compile("(\"|')(\\s|):(\\s|)(\"|'|)")
-		data := r.FindAllString(Body, -1)
-		return strconv.Itoa(len(data))
-	}
-
-	//@TODO: Implement other content types?
-
 	return "0"
 }
 
-func CountCssFiles(Body string) string {
-	r, _ := regexp.Compile(`\.css(\?|)`)
-	data := r.FindAllStringIndex(Body, -1)
-	return strconv.Itoa(len(data))
+func CountCssFiles(body string) string {
+	return strconv.Itoa(len(cssRegex.FindAllString(body, -1)))
 }
 
-func CountJsFiles(Body string) string {
-	r, _ := regexp.Compile(`\.js(\?|)`)
-	data := r.FindAllStringIndex(Body, -1)
-	return strconv.Itoa(len(data))
+func CountJsFiles(body string) string {
+	return strconv.Itoa(len(jsRegex.FindAllString(body, -1)))
 }
 
-func CalculateTitleLength(Body string) string {
-
-	r, _ := regexp.Compile("(?mi)<title>(.*?)</title>")
-	// Checks only the first occurenc of a title tag
-	data := r.FindStringSubmatch(Body)
-
-	// Usually we have an array of two elements, first is the complete match including
-	// tags, the second one contains only the string between the tags
-	if len(data) != 2 {
-		return "0"
+func CalculateTitleLength(body string) string {
+	matches := titleRegex.FindStringSubmatch(body)
+	if len(matches) == 2 {
+		return strconv.Itoa(len(matches[1]))
 	}
-
-	return strconv.Itoa(len(data[1]))
+	return "0"
 }
 
-func CalculateTitleWords(Body string) string {
-
-	r, _ := regexp.Compile("(?mi)<title>(.*?)</title>")
-	// Checks only the first occurenc of a title tag
-	data := r.FindStringSubmatch(Body)
-
-	// Usually we have an array of two elements, first is the complete match including
-	// tags, the second one contains only the string between the tags
-	if len(data) != 2 {
-		return "0"
+func CalculateTitleWords(body string) string {
+	matches := titleRegex.FindStringSubmatch(body)
+	if len(matches) == 2 {
+		return strconv.Itoa(len(strings.Fields(matches[1])))
 	}
-
-	Title := data[1]
-	SplittedBySpace := strings.Split(Title, " ")
-
-	return strconv.Itoa(len(SplittedBySpace))
+	return "0"
 }
 
-func ExtractRedirectDomain(Url string) string {
-	ParsedUrl, err := url.Parse(Url)
+func ExtractRedirectDomain(urlStr string) string {
+	parsedURL, err := url.Parse(urlStr)
 	if err != nil {
 		return ""
 	}
-
-	return ParsedUrl.Host
+	return parsedURL.Host
 }
 
-func CountRedirectParameters(Url string) string {
-	ParsedUrl, err := url.Parse(Url)
+func CountRedirectParameters(urlStr string) string {
+	parsedURL, err := url.Parse(urlStr)
 	if err != nil {
 		return "0"
 	}
-
-	m, _ := url.ParseQuery(ParsedUrl.RawQuery)
-	return strconv.Itoa(len(m))
+	return strconv.Itoa(len(parsedURL.Query()))
 }
 
-func CountHeaders(HeaderString string) string {
-
-	r, _ := regexp.Compile("(.*):(.*)")
-	data := r.FindAllString(HeaderString, -1)
-
-	return strconv.Itoa(len(data))
+func CountHeaders(headerString string) string {
+	return strconv.Itoa(len(headerRegex.FindAllString(headerString, -1)))
 }

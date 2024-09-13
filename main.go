@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 )
@@ -151,24 +152,34 @@ func main() {
 		fmt.Printf("\033[32m[i]\033[0m Deleting all body files\n")
 	}
 
-	sem := make(chan struct{}, 25)
+	workerCount := runtime.NumCPU() * 2
+	jobs := make(chan string, len(ResultFileNamesToBeDeleted))
 	var wg sync.WaitGroup
-	for _, Filename := range ResultFileNamesToBeDeleted {
+
+	// Create worker pool
+	for w := 0; w < workerCount; w++ {
 		wg.Add(1)
-
-		go func(Filename string) {
-			defer wg.Done()
-			sem <- struct{}{}
-
-			NormalizedPath := strings.TrimRight(Configuration.FfufBodiesFolder, "/\\")
-			NormalizedPath = filepath.Join(NormalizedPath, Filename)
-
-			if general.FileExists(NormalizedPath) {
-				os.Remove(NormalizedPath)
-			}
-			<-sem
-		}(Filename)
+		go worker(&wg, jobs, Configuration.FfufBodiesFolder)
 	}
+
+	// Send jobs to the pool
+	for _, Filename := range ResultFileNamesToBeDeleted {
+		jobs <- Filename
+	}
+	close(jobs)
+
 	wg.Wait()
 
+}
+
+func worker(wg *sync.WaitGroup, jobs <-chan string, FfufBodiesFolder string) {
+	defer wg.Done()
+	for Filename := range jobs {
+		NormalizedPath := strings.TrimRight(FfufBodiesFolder, "/\\")
+		NormalizedPath = filepath.Join(NormalizedPath, Filename)
+
+		if general.FileExists(NormalizedPath) {
+			os.Remove(NormalizedPath)
+		}
+	}
 }
