@@ -1,9 +1,9 @@
 package results
 
 import (
+	"bufio"
 	"github.com/dsecuredcom/ffufPostprocessing/pkg/general"
 	_struct "github.com/dsecuredcom/ffufPostprocessing/pkg/struct"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,8 +11,7 @@ import (
 	"sync"
 )
 
-const maxReadSize = 786432 // 3/4 of 1MB
-
+// EnrichResultsWithRedirectData enriches results with redirect data
 func EnrichResultsWithRedirectData(Entries *[]_struct.Result) {
 	var wg sync.WaitGroup
 	for i := range *Entries {
@@ -26,31 +25,26 @@ func EnrichResultsWithRedirectData(Entries *[]_struct.Result) {
 	wg.Wait()
 }
 
+// EnrichResults enriches results with additional data from body files
 func EnrichResults(FfufBodiesFolder string, Entries *[]_struct.Result) {
 	numWorkers := runtime.NumCPU()
-	jobs := make(chan int, len(*Entries))
+	semaphore := make(chan struct{}, numWorkers)
 	var wg sync.WaitGroup
 
-	for w := 0; w < numWorkers; w++ {
-		wg.Add(1)
-		go worker(w, jobs, &wg, FfufBodiesFolder, Entries)
-	}
-
 	for i := range *Entries {
-		jobs <- i
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+			enrichEntry(i, FfufBodiesFolder, Entries)
+		}(i)
 	}
-	close(jobs)
 
 	wg.Wait()
 }
 
-func worker(id int, jobs <-chan int, wg *sync.WaitGroup, FfufBodiesFolder string, Entries *[]_struct.Result) {
-	defer wg.Done()
-	for i := range jobs {
-		enrichEntry(i, FfufBodiesFolder, Entries)
-	}
-}
-
+// enrichEntry enriches a single entry with data from its body file
 func enrichEntry(i int, FfufBodiesFolder string, Entries *[]_struct.Result) {
 	FfufBodiesFolder = strings.TrimRight(FfufBodiesFolder, "/\\")
 	BodyFilePath := filepath.Join(FfufBodiesFolder, (*Entries)[i].Resultfile)
@@ -65,23 +59,38 @@ func enrichEntry(i int, FfufBodiesFolder string, Entries *[]_struct.Result) {
 	}
 	defer file.Close()
 
-	content := make([]byte, maxReadSize)
-	n, err := io.ReadFull(file, content)
-	if err != nil && err != io.ErrUnexpectedEOF {
-		return
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+
+	var headers, body strings.Builder
+	inHeaders := true
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if inHeaders {
+			if line == "" {
+				inHeaders = false
+				continue
+			}
+			headers.WriteString(line)
+			headers.WriteByte('\n')
+		} else {
+			body.WriteString(line)
+			body.WriteByte('\n')
+		}
 	}
-	content = content[:n]
 
-	Headers, Body := SeperateContentIntoHeadersAndBody(string(content))
-
-	(*Entries)[i].CountHeaders = CountHeaders(Headers)
-	(*Entries)[i].LengthTitle = CalculateTitleLength(Body)
-	(*Entries)[i].WordsTitle = CalculateTitleWords(Body)
-	(*Entries)[i].CountCssFiles = CountCssFiles(Body)
-	(*Entries)[i].CountJsFiles = CountJsFiles(Body)
-	(*Entries)[i].CountTags = CountTags((*Entries)[i].ContentType, Body)
+	// Process headers and body
+	(*Entries)[i].CountHeaders = CountHeaders(headers.String())
+	bodyStr := body.String()
+	(*Entries)[i].LengthTitle = CalculateTitleLength(bodyStr)
+	(*Entries)[i].WordsTitle = CalculateTitleWords(bodyStr)
+	(*Entries)[i].CountCssFiles = CountCssFiles(bodyStr)
+	(*Entries)[i].CountJsFiles = CountJsFiles(bodyStr)
+	(*Entries)[i].CountTags = CountTags((*Entries)[i].ContentType, bodyStr)
 }
 
+// SeperateContentIntoHeadersAndBody separates the content into headers and body
 func SeperateContentIntoHeadersAndBody(Content string) (string, string) {
 	parts := strings.SplitN(Content, "---- ↑ Request ---- Response ↓ ----", 2)
 	if len(parts) < 2 {
@@ -93,22 +102,24 @@ func SeperateContentIntoHeadersAndBody(Content string) (string, string) {
 	var HeaderBuilder, BodyBuilder strings.Builder
 	inHeaders := true
 
-	lines := strings.Split(EntireResponse, "\n")
+	scanner := bufio.NewScanner(strings.NewReader(EntireResponse))
+	scanner.Split(bufio.ScanLines)
 
-	// Start from index 1, skipping the first line
-	for i := 1; i < len(lines); i++ {
-		line := strings.TrimSpace(lines[i])
-
-		if inHeaders {
-			if line == "" {
-				inHeaders = false
-				continue
+	// Skip the first line
+	if scanner.Scan() {
+		for scanner.Scan() {
+			line := scanner.Text()
+			if inHeaders {
+				if line == "" {
+					inHeaders = false
+					continue
+				}
+				HeaderBuilder.WriteString(line)
+				HeaderBuilder.WriteByte('\n')
+			} else {
+				BodyBuilder.WriteString(line)
+				BodyBuilder.WriteByte('\n')
 			}
-			HeaderBuilder.WriteString(line)
-			HeaderBuilder.WriteByte('\n')
-		} else {
-			BodyBuilder.WriteString(line)
-			BodyBuilder.WriteByte('\n')
 		}
 	}
 

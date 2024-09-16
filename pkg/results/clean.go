@@ -7,101 +7,470 @@ import (
 )
 
 func MinimizeOriginalResults(Entries *[]_struct.Result) []_struct.Result {
-	uniqueChecks := make(map[string]int)
-	uniqueLengthSum := make(map[string]float64)
-	uniqueMeanLength := make(map[string]float64)
 
-	// First pass: Analyze entries and calculate means
-	for _, entry := range *Entries {
-		analyzeEntry(&entry, uniqueChecks, &uniqueLengthSum)
+	UniqueStatusMd5 := map[string]int{}
+	UniqueStatusLengthMd5 := map[string]int{}
+	UniqueStatusWordsMd5 := map[string]int{}
+	UniqueStatusLinesMd5 := map[string]int{}
+	UniqueStatusContentTypeMd5 := map[string]int{}
+	UniqueWordsContentTypeMd5 := map[string]int{}
+	UniqueStatusRedirectAndParameters := map[string]int{}
+	UniqueTitleLengthMd5 := map[string]int{}
+	UniqueTitleWordsMd5 := map[string]int{}
+	UniqueTitleLinesWordsMd5 := map[string]int{}
+	UniqueCssFilesMd5 := map[string]int{}
+	UniqueJsFilesMd5 := map[string]int{}
+	UniqueStatusJsCssFilesMd5 := map[string]int{}
+	UniqueTagsMd5 := map[string]int{}
+	UniqueHttpStatusHeaderCountMd5 := map[string]int{}
+	UniqueLengthSumPerHttpStatus := map[string]float64{}
+	UniqueMeanLengthPerHttpStatus := map[string]float64{}
+
+	for i := 0; i < len(*Entries); i++ {
+		AnalyzeByHttpStatus(Entries, i, &UniqueStatusMd5)
+		AnalyzeByHttpStatusAndLength(Entries, i, &UniqueStatusLengthMd5)
+		AnalyzeByHttpStatusAndWords(Entries, i, &UniqueStatusWordsMd5)
+		AnalyzeByHttpStatusAndLines(Entries, i, &UniqueStatusLinesMd5)
+		AnalyzeByHttpStatusAndContentType(Entries, i, &UniqueStatusContentTypeMd5)
+		AnalyzeByWordsAndContentType(Entries, i, &UniqueWordsContentTypeMd5)
+		AnalyzeByHttpStatusAndRedirectData(Entries, i, &UniqueStatusRedirectAndParameters)
+		AnalyzeByTitleLength(Entries, i, &UniqueTitleLengthMd5)
+		AnalyzeByTitleWords(Entries, i, &UniqueTitleWordsMd5)
+		AnalyzeByTitleLengthWords(Entries, i, &UniqueTitleLinesWordsMd5)
+		AnalyzeByCssFiles(Entries, i, &UniqueCssFilesMd5)
+		AnalyzeByJsFiles(Entries, i, &UniqueJsFilesMd5)
+		AnalyzeByHttpStatusJsCssFiles(Entries, i, &UniqueStatusJsCssFilesMd5)
+		AnalyzeByTags(Entries, i, &UniqueTagsMd5)
+		AnalyzeByHttpStatusAndHeadersCount(Entries, i, &UniqueHttpStatusHeaderCountMd5)
+		CalculateLengthSumPerHttpStatus(Entries, i, &UniqueLengthSumPerHttpStatus)
+
 	}
-	calculateMeanLength(uniqueChecks, uniqueLengthSum, uniqueMeanLength)
 
-	// Second pass: Filter entries
-	var cleanedResults []_struct.Result
-	contentCounter := make(map[string]int)
+	CalculateMeanLengthPerHttpStatus(&UniqueStatusMd5, &UniqueLengthSumPerHttpStatus, &UniqueMeanLengthPerHttpStatus)
 
-	for _, entry := range *Entries {
-		if keepEntry(&entry, uniqueChecks, uniqueMeanLength, contentCounter) {
-			cleanedResults = append(cleanedResults, entry)
+	TemporaryCleanedResults := []_struct.Result{}
+	PositionsDone := map[int]bool{}
+	ContentCounterMap := map[string]int{}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		MeanOfCurrentHttpStatus := UniqueMeanLengthPerHttpStatus["status-mean-length:"+strconv.Itoa((*Entries)[i].Status)]
+
+		DevFloat := float64((*Entries)[i].Length) / MeanOfCurrentHttpStatus
+
+		Dev := fmt.Sprintf("%f", DevFloat)
+		Content := "dev:" + strconv.Itoa((*Entries)[i].Status) + Dev
+
+		if DevFloat != 1.0 && ContentCounterMap[Content] <= 2 {
+			(*Entries)[i].KeepReason = "deviation (" + Dev + ")"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+
+		}
+
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "status-length:" + strconv.Itoa((*Entries)[i].Status) + ":" + strconv.Itoa((*Entries)[i].Length)
+
+		if UniqueStatusLengthMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "http status + length"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
 		}
 	}
 
-	return cleanedResults
-}
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
 
-func analyzeEntry(entry *_struct.Result, uniqueChecks map[string]int, uniqueLengthSum *map[string]float64) {
-	status := strconv.Itoa(entry.Status)
-	incrementUniqueCheck(uniqueChecks, "status:"+status)
-	incrementUniqueCheck(uniqueChecks, "status-length:"+status+":"+strconv.Itoa(entry.Length))
-	incrementUniqueCheck(uniqueChecks, "status-words:"+status+":"+strconv.Itoa(entry.Words))
-	incrementUniqueCheck(uniqueChecks, "status-lines:"+status+":"+strconv.Itoa(entry.Lines))
-	incrementUniqueCheck(uniqueChecks, "status-content-type:"+status+":"+entry.ContentType)
-	incrementUniqueCheck(uniqueChecks, "words-content-type:"+strconv.Itoa(entry.Words)+":"+entry.ContentType)
-	incrementUniqueCheck(uniqueChecks, "status-redirect:"+status+":"+entry.RedirectDomain+":"+entry.CountRedirectParameters)
-	incrementUniqueCheck(uniqueChecks, "title-length:"+entry.LengthTitle)
-	incrementUniqueCheck(uniqueChecks, "title-words:"+entry.WordsTitle)
-	incrementUniqueCheck(uniqueChecks, "title-length-words:"+entry.WordsTitle+":"+entry.LengthTitle)
-	incrementUniqueCheck(uniqueChecks, "css:"+entry.CountCssFiles)
-	incrementUniqueCheck(uniqueChecks, "js:"+entry.CountJsFiles)
-	incrementUniqueCheck(uniqueChecks, "status-js-css:"+status+":"+entry.CountJsFiles+":"+entry.CountCssFiles)
-	incrementUniqueCheck(uniqueChecks, "tags:"+entry.CountTags)
-	incrementUniqueCheck(uniqueChecks, "status-header-count:"+status+":"+entry.CountHeaders)
+		Content := "status-words:" + strconv.Itoa((*Entries)[i].Status) + ":" + strconv.Itoa((*Entries)[i].Words)
 
-	(*uniqueLengthSum)[status] += float64(entry.Length)
-}
-
-func incrementUniqueCheck(uniqueChecks map[string]int, key string) {
-	uniqueChecks[key]++
-}
-
-func calculateMeanLength(uniqueChecks map[string]int, uniqueLengthSum, uniqueMeanLength map[string]float64) {
-	for status, sum := range uniqueLengthSum {
-		uniqueMeanLength["status-mean-length:"+status] = sum / float64(uniqueChecks["status:"+status])
-	}
-}
-
-func keepEntry(entry *_struct.Result, uniqueChecks map[string]int, uniqueMeanLength map[string]float64, contentCounter map[string]int) bool {
-	status := strconv.Itoa(entry.Status)
-	meanLength := uniqueMeanLength["status-mean-length:"+status]
-	deviation := float64(entry.Length) / meanLength
-	devContent := "dev:" + status + fmt.Sprintf("%f", deviation)
-
-	if deviation != 1.0 && contentCounter[devContent] <= 2 {
-		entry.KeepReason = "deviation (" + fmt.Sprintf("%f", deviation) + ")"
-		contentCounter[devContent]++
-		return true
-	}
-
-	checks := []struct {
-		key    string
-		reason string
-		limit  int
-	}{
-		{"status-length:" + status + ":" + strconv.Itoa(entry.Length), "http status + length", 5},
-		{"status-words:" + status + ":" + strconv.Itoa(entry.Words), "http status + words", 5},
-		{"status-lines:" + status + ":" + strconv.Itoa(entry.Lines), "http status + lines", 5},
-		{"words-content-type:" + strconv.Itoa(entry.Words) + ":" + entry.ContentType, "words + content type", 5},
-		{"status-content-type:" + status + ":" + entry.ContentType, "http status + content type", 5},
-		{"status-js-css:" + status + ":" + entry.CountJsFiles + ":" + entry.CountCssFiles, "status+js+css", 5},
-		{"status-redirect:" + status + ":" + entry.RedirectDomain + ":" + entry.CountRedirectParameters, "http status + redirect", 5},
-		{"status-header-count:" + status + ":" + entry.CountHeaders, "http status + header count", 5},
-		{"title-length:" + entry.LengthTitle, "title length", 5},
-		{"title-words:" + entry.WordsTitle, "title words", 5},
-		{"title-length-words:" + entry.WordsTitle + ":" + entry.LengthTitle, "title length + words", 5},
-		{"css:" + entry.CountCssFiles, "css files", 5},
-		{"js:" + entry.CountJsFiles, "js files", 5},
-		{"tags:" + entry.CountTags, "tags", 5},
-		{"status:" + status, "http status", 1},
-	}
-
-	for _, check := range checks {
-		if uniqueChecks[check.key] < check.limit && contentCounter[check.key] < 2 {
-			entry.KeepReason = check.reason
-			contentCounter[check.key]++
-			return true
+		if UniqueStatusWordsMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "http status + words"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
 		}
 	}
 
-	return false
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "status-lines:" + strconv.Itoa((*Entries)[i].Status) + ":" + strconv.Itoa((*Entries)[i].Lines)
+
+		if UniqueStatusLinesMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "http status + lines"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "words-content-type:" + strconv.Itoa((*Entries)[i].Words) + ":" + (*Entries)[i].ContentType
+
+		if UniqueWordsContentTypeMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "words + content type"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "status-content type:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].ContentType
+
+		if UniqueStatusContentTypeMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "http status + content type"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "status+js+css:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].CountJsFiles + ":" + (*Entries)[i].CountCssFiles
+
+		if UniqueStatusJsCssFilesMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "status+js+css"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "status-redirect:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].RedirectDomain + ":" + (*Entries)[i].CountRedirectParameters
+
+		if UniqueStatusRedirectAndParameters[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "http status + redirect"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "status-header-count:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].CountHeaders
+
+		if UniqueHttpStatusHeaderCountMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "http status + header count"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "title-length:" + (*Entries)[i].LengthTitle
+
+		if UniqueTitleLengthMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "title length"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "title-words:" + (*Entries)[i].WordsTitle
+
+		if UniqueTitleWordsMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "title words"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "title-length-words:" + (*Entries)[i].WordsTitle + ":" + (*Entries)[i].LengthTitle
+
+		if UniqueTitleLinesWordsMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "title length + words"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "css:" + (*Entries)[i].CountCssFiles
+
+		if UniqueCssFilesMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "css files"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "js:" + (*Entries)[i].CountJsFiles
+
+		if UniqueJsFilesMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "js files"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "tags:" + (*Entries)[i].CountTags
+
+		if UniqueTagsMd5[Content] < 5 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "tags"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	for i := 0; i < len(*Entries); i++ {
+		if PositionsDone[i] {
+			continue
+		}
+
+		Content := "status:" + strconv.Itoa((*Entries)[i].Status)
+
+		if UniqueStatusMd5[Content] > 0 && ContentCounterMap[Content] < 2 {
+			(*Entries)[i].KeepReason = "http status"
+			TemporaryCleanedResults = append(TemporaryCleanedResults, (*Entries)[i])
+			PositionsDone[i] = true
+			ContentCounterMap[Content]++
+		}
+	}
+
+	return TemporaryCleanedResults
+}
+
+func CalculateMeanLengthPerHttpStatus(HttpStatusData *map[string]int, LengthSum *map[string]float64, LengthMean *map[string]float64) {
+	for id, value := range *LengthSum {
+		(*LengthMean)["status-mean-length:"+id] = value / float64((*HttpStatusData)["status:"+id])
+	}
+}
+
+func CalculateLengthSumPerHttpStatus(Entries *[]_struct.Result, i int, Hashes *map[string]float64) {
+	Content := strconv.Itoa((*Entries)[i].Status)
+	if (*Hashes)[Content] == 0 {
+		(*Hashes)[Content] = float64((*Entries)[i].Length)
+	} else {
+		(*Hashes)[Content] = float64((*Entries)[i].Length) + (*Hashes)[Content]
+	}
+}
+
+func AnalyzeByHttpStatusJsCssFiles(Entries *[]_struct.Result, i int, Hashes *map[string]int) {
+	Content := "status+js+css:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].CountJsFiles + ":" + (*Entries)[i].CountCssFiles
+
+	if (*Hashes)[Content] == 0 {
+		(*Hashes)[Content] = 1
+	} else {
+		(*Hashes)[Content]++
+	}
+}
+
+func AnalyzeByWordsAndContentType(Entries *[]_struct.Result, i int, Hashes *map[string]int) {
+
+	Content := "words-content-type:" + strconv.Itoa((*Entries)[i].Words) + ":" + (*Entries)[i].ContentType
+
+	if (*Hashes)[Content] == 0 {
+		(*Hashes)[Content] = 1
+	} else {
+		(*Hashes)[Content]++
+	}
+}
+
+func AnalyzeByHttpStatus(Entries *[]_struct.Result, i int, StatusMd5 *map[string]int) {
+
+	Content := "status:" + strconv.Itoa((*Entries)[i].Status)
+
+	if (*StatusMd5)[Content] == 0 {
+		(*StatusMd5)[Content] = 1
+	} else {
+		(*StatusMd5)[Content]++
+	}
+
+}
+
+func AnalyzeByHttpStatusAndLength(Entries *[]_struct.Result, i int, StatusLengthMd5 *map[string]int) {
+	Content := "status-length:" + strconv.Itoa((*Entries)[i].Status) + ":" + strconv.Itoa((*Entries)[i].Length)
+
+	if (*StatusLengthMd5)[Content] == 0 {
+		(*StatusLengthMd5)[Content] = 1
+	} else {
+		(*StatusLengthMd5)[Content]++
+	}
+
+}
+
+func AnalyzeByHttpStatusAndHeadersCount(Entries *[]_struct.Result, i int, countMd5 *map[string]int) {
+	Content := "status-header-count:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].CountHeaders
+
+	if (*countMd5)[Content] == 0 {
+		(*countMd5)[Content] = 1
+	} else {
+		(*countMd5)[Content]++
+	}
+
+}
+
+func AnalyzeByTags(Entries *[]_struct.Result, i int, tagsMd5 *map[string]int) {
+	Content := "tags:" + (*Entries)[i].CountTags
+
+	if (*tagsMd5)[Content] == 0 {
+		(*tagsMd5)[Content] = 1
+	} else {
+		(*tagsMd5)[Content]++
+	}
+
+}
+
+func AnalyzeByJsFiles(Entries *[]_struct.Result, i int, filesMd5 *map[string]int) {
+	Content := "js:" + (*Entries)[i].CountJsFiles
+
+	if (*filesMd5)[Content] == 0 {
+		(*filesMd5)[Content] = 1
+	} else {
+		(*filesMd5)[Content]++
+	}
+}
+
+func AnalyzeByCssFiles(Entries *[]_struct.Result, i int, filesMd5 *map[string]int) {
+	Content := "css:" + (*Entries)[i].CountCssFiles
+
+	if (*filesMd5)[Content] == 0 {
+		(*filesMd5)[Content] = 1
+	} else {
+		(*filesMd5)[Content]++
+	}
+}
+
+func AnalyzeByTitleLengthWords(Entries *[]_struct.Result, i int, wordsMd5 *map[string]int) {
+	Content := "title-length-words:" + (*Entries)[i].WordsTitle + ":" + (*Entries)[i].LengthTitle
+
+	if (*wordsMd5)[Content] == 0 {
+		(*wordsMd5)[Content] = 1
+	} else {
+		(*wordsMd5)[Content]++
+	}
+}
+
+func AnalyzeByTitleWords(Entries *[]_struct.Result, i int, wordsMd5 *map[string]int) {
+	Content := "title-words:" + (*Entries)[i].WordsTitle
+
+	if (*wordsMd5)[Content] == 0 {
+		(*wordsMd5)[Content] = 1
+	} else {
+		(*wordsMd5)[Content]++
+	}
+}
+
+func AnalyzeByTitleLength(Entries *[]_struct.Result, i int, lengthMd5 *map[string]int) {
+	Content := "title-length:" + (*Entries)[i].LengthTitle
+
+	if (*lengthMd5)[Content] == 0 {
+		(*lengthMd5)[Content] = 1
+	} else {
+		(*lengthMd5)[Content]++
+	}
+}
+
+func AnalyzeByHttpStatusAndRedirectData(Entries *[]_struct.Result, i int, parameters *map[string]int) {
+	Content := "status-redirect:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].RedirectDomain + ":" + (*Entries)[i].CountRedirectParameters
+
+	if (*parameters)[Content] == 0 {
+		(*parameters)[Content] = 1
+	} else {
+		(*parameters)[Content]++
+	}
+}
+
+func AnalyzeByHttpStatusAndContentType(Entries *[]_struct.Result, i int, StatusCTMd5 *map[string]int) {
+	Content := "status-content type:" + strconv.Itoa((*Entries)[i].Status) + ":" + (*Entries)[i].ContentType
+
+	if (*StatusCTMd5)[Content] == 0 {
+		(*StatusCTMd5)[Content] = 1
+	} else {
+		(*StatusCTMd5)[Content]++
+	}
+}
+
+func AnalyzeByHttpStatusAndLines(Entries *[]_struct.Result, i int, StatusLinesMd5 *map[string]int) {
+	Content := "status-lines:" + strconv.Itoa((*Entries)[i].Status) + ":" + strconv.Itoa((*Entries)[i].Lines)
+
+	if (*StatusLinesMd5)[Content] == 0 {
+		(*StatusLinesMd5)[Content] = 1
+	} else {
+		(*StatusLinesMd5)[Content]++
+	}
+
+}
+
+func AnalyzeByHttpStatusAndWords(Entries *[]_struct.Result, i int, StatusWordsMd5 *map[string]int) {
+	Content := "status-words:" + strconv.Itoa((*Entries)[i].Status) + ":" + strconv.Itoa((*Entries)[i].Words)
+
+	if (*StatusWordsMd5)[Content] == 0 {
+		(*StatusWordsMd5)[Content] = 1
+	} else {
+		(*StatusWordsMd5)[Content]++
+	}
+
 }

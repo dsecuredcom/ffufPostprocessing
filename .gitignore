@@ -4,5 +4,3 @@ dist
 examples.txt
 ai.sh
 ai.txt
-cpuprofile
-memprofile
