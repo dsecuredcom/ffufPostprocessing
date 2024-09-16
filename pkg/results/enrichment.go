@@ -3,12 +3,15 @@ package results
 import (
 	"github.com/dsecuredcom/ffufPostprocessing/pkg/general"
 	_struct "github.com/dsecuredcom/ffufPostprocessing/pkg/struct"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
 )
+
+const maxReadSize = 786432 // 3/4 of 1MB
 
 func EnrichResultsWithRedirectData(Entries *[]_struct.Result) {
 	var wg sync.WaitGroup
@@ -24,28 +27,28 @@ func EnrichResultsWithRedirectData(Entries *[]_struct.Result) {
 }
 
 func EnrichResults(FfufBodiesFolder string, Entries *[]_struct.Result) {
-	numWorkers := runtime.NumCPU() * 2
-	jobs := make(chan int)
+	numWorkers := runtime.NumCPU()
+	jobs := make(chan int, len(*Entries))
 	var wg sync.WaitGroup
 
-	// Create worker pool
 	for w := 0; w < numWorkers; w++ {
 		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for i := range jobs {
-				enrichEntry(i, FfufBodiesFolder, Entries)
-			}
-		}()
+		go worker(w, jobs, &wg, FfufBodiesFolder, Entries)
 	}
 
-	// Send jobs to the pool
 	for i := range *Entries {
 		jobs <- i
 	}
 	close(jobs)
 
 	wg.Wait()
+}
+
+func worker(id int, jobs <-chan int, wg *sync.WaitGroup, FfufBodiesFolder string, Entries *[]_struct.Result) {
+	defer wg.Done()
+	for i := range jobs {
+		enrichEntry(i, FfufBodiesFolder, Entries)
+	}
 }
 
 func enrichEntry(i int, FfufBodiesFolder string, Entries *[]_struct.Result) {
@@ -56,10 +59,18 @@ func enrichEntry(i int, FfufBodiesFolder string, Entries *[]_struct.Result) {
 		return
 	}
 
-	content, err := os.ReadFile(BodyFilePath)
+	file, err := os.Open(BodyFilePath)
 	if err != nil {
 		return
 	}
+	defer file.Close()
+
+	content := make([]byte, maxReadSize)
+	n, err := io.ReadFull(file, content)
+	if err != nil && err != io.ErrUnexpectedEOF {
+		return
+	}
+	content = content[:n]
 
 	Headers, Body := SeperateContentIntoHeadersAndBody(string(content))
 

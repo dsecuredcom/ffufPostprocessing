@@ -17,6 +17,7 @@ import (
 func main() {
 
 	Configuration := general.GetArguments()
+
 	fmt.Printf("\033[34m[i]\033[0m Original result file: %s\n", Configuration.OriginalFfufResultFile)
 
 	if !general.FileExists(Configuration.OriginalFfufResultFile) {
@@ -152,7 +153,7 @@ func main() {
 		fmt.Printf("\033[32m[i]\033[0m Deleting all body files\n")
 	}
 
-	workerCount := runtime.NumCPU() * 2
+	workerCount := runtime.NumCPU() * 4
 	jobs := make(chan string, len(ResultFileNamesToBeDeleted))
 	var wg sync.WaitGroup
 
