@@ -4,12 +4,15 @@ import (
 	"bufio"
 	"github.com/dsecuredcom/ffufPostprocessing/pkg/general"
 	_struct "github.com/dsecuredcom/ffufPostprocessing/pkg/struct"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
 )
+
+const maxReadSize = 786432
 
 // EnrichResultsWithRedirectData enriches results with redirect data
 func EnrichResultsWithRedirectData(Entries *[]_struct.Result) {
@@ -27,24 +30,32 @@ func EnrichResultsWithRedirectData(Entries *[]_struct.Result) {
 
 // EnrichResults enriches results with additional data from body files
 func EnrichResults(FfufBodiesFolder string, Entries *[]_struct.Result) {
-	numWorkers := runtime.NumCPU()
-	semaphore := make(chan struct{}, numWorkers)
+	numWorkers := runtime.NumCPU() // You can adjust this number based on your needs
+	jobs := make(chan int, len(*Entries))
 	var wg sync.WaitGroup
 
-	for i := range *Entries {
+	// Create worker pool
+	for w := 0; w < numWorkers; w++ {
 		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			semaphore <- struct{}{}
-			defer func() { <-semaphore }()
-			enrichEntry(i, FfufBodiesFolder, Entries)
-		}(i)
+		go worker(w, jobs, &wg, FfufBodiesFolder, Entries)
 	}
+
+	// Send jobs to the pool
+	for i := range *Entries {
+		jobs <- i
+	}
+	close(jobs)
 
 	wg.Wait()
 }
 
-// enrichEntry enriches a single entry with data from its body file
+func worker(id int, jobs <-chan int, wg *sync.WaitGroup, FfufBodiesFolder string, Entries *[]_struct.Result) {
+	defer wg.Done()
+	for i := range jobs {
+		enrichEntry(i, FfufBodiesFolder, Entries)
+	}
+}
+
 func enrichEntry(i int, FfufBodiesFolder string, Entries *[]_struct.Result) {
 	FfufBodiesFolder = strings.TrimRight(FfufBodiesFolder, "/\\")
 	BodyFilePath := filepath.Join(FfufBodiesFolder, (*Entries)[i].Resultfile)
@@ -59,35 +70,21 @@ func enrichEntry(i int, FfufBodiesFolder string, Entries *[]_struct.Result) {
 	}
 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
-
-	var headers, body strings.Builder
-	inHeaders := true
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		if inHeaders {
-			if line == "" {
-				inHeaders = false
-				continue
-			}
-			headers.WriteString(line)
-			headers.WriteByte('\n')
-		} else {
-			body.WriteString(line)
-			body.WriteByte('\n')
-		}
+	content := make([]byte, maxReadSize)
+	n, err := io.ReadFull(file, content)
+	if err != nil && err != io.ErrUnexpectedEOF {
+		return
 	}
+	content = content[:n]
 
-	// Process headers and body
-	(*Entries)[i].CountHeaders = CountHeaders(headers.String())
-	bodyStr := body.String()
-	(*Entries)[i].LengthTitle = CalculateTitleLength(bodyStr)
-	(*Entries)[i].WordsTitle = CalculateTitleWords(bodyStr)
-	(*Entries)[i].CountCssFiles = CountCssFiles(bodyStr)
-	(*Entries)[i].CountJsFiles = CountJsFiles(bodyStr)
-	(*Entries)[i].CountTags = CountTags((*Entries)[i].ContentType, bodyStr)
+	Headers, Body := SeperateContentIntoHeadersAndBody(string(content))
+
+	(*Entries)[i].CountHeaders = CountHeaders(Headers)
+	(*Entries)[i].LengthTitle = CalculateTitleLength(Body)
+	(*Entries)[i].WordsTitle = CalculateTitleWords(Body)
+	(*Entries)[i].CountCssFiles = CountCssFiles(Body)
+	(*Entries)[i].CountJsFiles = CountJsFiles(Body)
+	(*Entries)[i].CountTags = CountTags((*Entries)[i].ContentType, Body)
 }
 
 // SeperateContentIntoHeadersAndBody separates the content into headers and body
